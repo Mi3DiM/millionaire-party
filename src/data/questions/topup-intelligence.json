@@ -1,0 +1,758 @@
+[
+  {
+    "id": "int-012",
+    "question": "ما الشيء الذي يصعد دائما ولا ينزل أبدا؟",
+    "answers": ["العمر", "المصعد", "الطائرة", "الدخان"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "العمر يزداد مع الزمن ولا يمكن أن ينقص أبدا."
+  },
+  {
+    "id": "int-013",
+    "question": "كم عدد أيام شهر فبراير في السنة الكبيسة؟",
+    "answers": ["28 يوما", "29 يوما", "30 يوما", "27 يوما"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "يضاف يوم 29 فبراير كل أربع سنوات تقريبا فيصبح فبراير 29 يوما بدل 28."
+  },
+  {
+    "id": "int-014",
+    "question": "ما العدد التالي في النمط: 3، 6، 9، 12، ...؟",
+    "answers": ["13", "14", "15", "18"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "كل عدد يزيد 3 عن سابقه فيكون العدد التالي 15."
+  },
+  {
+    "id": "int-015",
+    "question": "أي حيوان من التالي ثديي يستطيع الطيران؟",
+    "answers": ["الصقر", "العصفور", "الفراشة", "الخفاش"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الخفاش هو الثديي الوحيد القادر على الطيران الحقيقي."
+  },
+  {
+    "id": "int-016",
+    "question": "إذا كان معك 10 أقلام وأعطيت صديقك 4 أقلام، فكم قلما بقي معك؟",
+    "answers": ["6", "4", "5", "7"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "عشرة ناقص أربعة يساوي ستة أقلام."
+  },
+  {
+    "id": "int-017",
+    "question": "ما الشيء الذي له وجه واحد ويدان ولا جسم له؟",
+    "answers": ["الكتاب", "الساعة", "المرآة", "الهاتف"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الساعة لها وجه وعقربان يسميان اليدين وليس لها جسم حي."
+  },
+  {
+    "id": "int-018",
+    "question": "كم عدد الألوان الأساسية في قوس قزح؟",
+    "answers": ["5", "6", "7", "8"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "يتكون قوس قزح من سبعة ألوان أساسية مميزة."
+  },
+  {
+    "id": "int-019",
+    "question": "أي عدد من التالي عدد زوجي؟",
+    "answers": ["7", "9", "11", "14"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "العدد 14 يقبل القسمة على 2 بينما البقية أعداد فردية."
+  },
+  {
+    "id": "int-020",
+    "question": "ماذا يحدث للماء عند درجة صفر مئوية تحت الضغط الجوي العادي؟",
+    "answers": ["يتجمد ويتحول إلى جليد", "يغلي", "يتبخر كليا", "يبقى سائلا"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "درجة صفر مئوية هي نقطة تجمد الماء تحت الضغط الجوي العادي."
+  },
+  {
+    "id": "int-021",
+    "question": "أب وابنه مجموع عمريهما 60 سنة وعمر الأب 40 سنة، فكم عمر الابن؟",
+    "answers": ["30 سنة", "20 سنة", "25 سنة", "15 سنة"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "عمر الابن يساوي 60 ناقص 40 أي 20 سنة."
+  },
+  {
+    "id": "int-022",
+    "question": "ما الشيء الذي كلما أخذت منه كبر؟",
+    "answers": ["الكعكة", "الماء", "الحفرة", "الرصيد"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الحفرة تكبر كلما أخذت منها ترابا أكثر."
+  },
+  {
+    "id": "int-023",
+    "question": "كم عدد الكواكب في المجموعة الشمسية حاليا؟",
+    "answers": ["7", "9", "10", "8"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "عدد الكواكب ثمانية بعد تصنيف بلوتو كوكبا قزما سنة 2006."
+  },
+  {
+    "id": "int-024",
+    "question": "إذا رتبت الأعداد التالية تصاعديا فأيها يأتي أولا: 45، 12، 78، 30؟",
+    "answers": ["12", "30", "45", "78"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "العدد 12 هو الأصغر بين الأعداد الأربعة فيأتي أولا."
+  },
+  {
+    "id": "int-025",
+    "question": "أي مادة من التالية يجذبها المغناطيس؟",
+    "answers": ["الخشب", "الحديد", "البلاستيك", "الزجاج"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الحديد مادة مغناطيسية بينما الخشب والبلاستيك والزجاج ليست كذلك."
+  },
+  {
+    "id": "int-026",
+    "question": "ما العدد المختلف في هذه المجموعة: 2، 4، 9، 6؟",
+    "answers": ["2", "4", "9", "6"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "العدد 9 هو الوحيد الفردي بينما البقية أعداد زوجية."
+  },
+  {
+    "id": "int-027",
+    "question": "كم عدد أضلاع المثلث؟",
+    "answers": ["4", "5", "6", "3"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "المثلث مضلع له ثلاثة أضلاع فقط."
+  },
+  {
+    "id": "int-028",
+    "question": "ما الكوكب الأقرب إلى الشمس؟",
+    "answers": ["عطارد", "الزهرة", "الأرض", "المريخ"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "عطارد هو أول الكواكب وأقربها إلى الشمس."
+  },
+  {
+    "id": "int-029",
+    "question": "ما الشيء الذي يمشي بلا أرجل ويدخل الأذن؟",
+    "answers": ["الضوء", "الصوت", "الهواء", "الماء"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الصوت ينتقل في الهواء بلا أرجل ويدخل الأذن فنسمعه."
+  },
+  {
+    "id": "int-030",
+    "question": "ما نصف العدد 50؟",
+    "answers": ["20", "30", "25", "15"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "نصف الخمسين يساوي خمسة وعشرين."
+  },
+  {
+    "id": "int-031",
+    "question": "أي كائن من التالي يعيش في الماء ويتنفس الهواء برئتين ويرضع صغاره؟",
+    "answers": ["سمك القرش", "الأخطبوط", "سمك التونة", "الحوت"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "الحوت من الثدييات البحرية التي تتنفس الهواء وترضع صغارها."
+  },
+  {
+    "id": "int-032",
+    "question": "ما حاصل جمع 7 زائد 8؟",
+    "answers": ["15", "14", "16", "13"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "سبعة زائد ثمانية يساوي خمسة عشر."
+  },
+  {
+    "id": "int-033",
+    "question": "إلى أي اتجاه تشير الإبرة الحمراء في البوصلة المغناطيسية عادة؟",
+    "answers": ["الجنوب", "الشمال", "الشرق", "الغرب"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "تشير الإبرة الممغنطة في البوصلة عادة نحو الشمال المغناطيسي."
+  },
+  {
+    "id": "int-034",
+    "question": "ما الحرف الذي يأتي بعد الباء مباشرة في الأبجدية العربية؟",
+    "answers": ["الألف", "الدال", "التاء", "الجيم"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "ترتيب الحروف الأولى هو ألف باء تاء ثاء ثم جيم."
+  },
+  {
+    "id": "int-035",
+    "question": "كم عدد أصابع اليد الواحدة للإنسان الطبيعي؟",
+    "answers": ["4", "6", "3", "5"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "لليد الواحدة خمسة أصابع في الإنسان الطبيعي."
+  },
+  {
+    "id": "int-036",
+    "question": "إذا قسمت كعكة إلى 4 أجزاء متساوية وأكلت جزءا واحدا، فما الكسر المتبقي؟",
+    "answers": ["3/4", "1/4", "1/2", "2/4"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "أربعة أرباع ناقص ربع واحد يساوي ثلاثة أرباع."
+  },
+  {
+    "id": "int-037",
+    "question": "أي طعام من التالي مصدر غني بفيتامين سي؟",
+    "answers": ["الخبز", "البرتقال", "اللحم", "الأرز"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "البرتقال والحمضيات من أغنى الأطعمة بفيتامين سي."
+  },
+  {
+    "id": "int-038",
+    "question": "ما العدد الأكبر بين: 99، 101، 110، 89؟",
+    "answers": ["99", "101", "110", "89"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "العدد 110 أكبر من 101 و99 و89."
+  },
+  {
+    "id": "int-039",
+    "question": "أي شكل له 4 أضلاع متساوية وزوايا قائمة؟",
+    "answers": ["المستطيل", "المثلث", "الدائرة", "المربع"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "easy",
+    "explanation": "المربع وحده يجمع بين تساوي الأضلاع الأربعة والزوايا القائمة."
+  },
+  {
+    "id": "int-040",
+    "question": "ما العدد التالي في النمط: 1، 4، 9، 16، ...؟",
+    "answers": ["25", "20", "24", "18"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "النمط مربعات الأعداد (1، 4، 9، 16) فالتالي مربع 5 وهو 25."
+  },
+  {
+    "id": "int-041",
+    "question": "إذا كانت 3 قطط تصطاد 3 فئران في 3 دقائق، فكم دقيقة تحتاج 6 قطط لاصطياد 6 فئران؟",
+    "answers": ["6 دقائق", "3 دقائق", "دقيقتان", "9 دقائق"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "كل قطة تصطاد فأرا واحدا في 3 دقائق فيبقى الزمن نفسه مهما زاد العدد."
+  },
+  {
+    "id": "int-042",
+    "question": "أي عدد من التالي يقبل القسمة على 3 وعلى 4 معا؟",
+    "answers": ["10", "14", "36", "22"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "العدد 36 يقبل القسمة على 3 (12) وعلى 4 (9) معا."
+  },
+  {
+    "id": "int-043",
+    "question": "ما الغاز الأكثر وفرة في الغلاف الجوي للأرض؟",
+    "answers": ["الأكسجين", "ثاني أكسيد الكربون", "الهيدروجين", "النيتروجين"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "يشكل النيتروجين حوالي 78% من الغلاف الجوي للأرض."
+  },
+  {
+    "id": "int-044",
+    "question": "سيارة قطعت 90 كيلومترا في ساعة ونصف، فما سرعتها المتوسطة؟",
+    "answers": ["60 كم في الساعة", "45 كم في الساعة", "90 كم في الساعة", "75 كم في الساعة"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "السرعة تساوي المسافة على الزمن أي 90 على 1.5 وتساوي 60."
+  },
+  {
+    "id": "int-045",
+    "question": "أي حيوان من التالي يملك ثلاثة قلوب؟",
+    "answers": ["الحوت", "الأخطبوط", "السلحفاة", "التمساح"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "يمتلك الأخطبوط ثلاثة قلوب ودمه أزرق اللون."
+  },
+  {
+    "id": "int-046",
+    "question": "ما العدد الذي إذا ضربته في نفسه ثم أضفت 1 أصبح الناتج 26؟",
+    "answers": ["4", "6", "5", "7"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "خمسة في خمسة يساوي 25 زائد 1 يساوي 26."
+  },
+  {
+    "id": "int-047",
+    "question": "كم مرة ينبض قلب الإنسان البالغ تقريبا في الدقيقة أثناء الراحة؟",
+    "answers": ["30 مرة", "120 مرة", "200 مرة", "70 مرة"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "المعدل الطبيعي أثناء الراحة بين 60 و100 نبضة ومتوسطه حوالي 70."
+  },
+  {
+    "id": "int-048",
+    "question": "ما العدد التالي في النمط: 2، 3، 5، 7، 11، ...؟",
+    "answers": ["13", "12", "14", "15"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "النمط أعداد أولية متتالية فالعدد الأولي التالي بعد 11 هو 13."
+  },
+  {
+    "id": "int-049",
+    "question": "إذا رميت عملة معدنية عادلة مرتين، فما احتمال ظهور الصورة في المرتين؟",
+    "answers": ["1/2", "1/4", "3/4", "1/3"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "احتمال الصورة في كل رمية نصف، ونصف في نصف يساوي ربعا."
+  },
+  {
+    "id": "int-050",
+    "question": "أي معدن من التالي سائل في درجة حرارة الغرفة؟",
+    "answers": ["الحديد", "الذهب", "الزئبق", "النحاس"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الزئبق هو المعدن الوحيد السائل في درجة حرارة الغرفة."
+  },
+  {
+    "id": "int-051",
+    "question": "عمر سارة الآن ضعف عمر أخيها، وبعد 10 سنوات يصبح مجموع عمريهما 50 سنة، فكم عمر سارة الآن؟",
+    "answers": ["15 سنة", "30 سنة", "10 سنوات", "20 سنة"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "إذا كان عمر الأخ 10 فسارة 20 وبعد 10 سنوات يصبحان 20 و30 ومجموعهما 50."
+  },
+  {
+    "id": "int-052",
+    "question": "ما الشيء الذي له عين واحدة ولا يرى؟",
+    "answers": ["الإبرة", "المقص", "القلم", "المفتاح"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الإبرة لها ثقب يسمى العين لكنها لا ترى به."
+  },
+  {
+    "id": "int-053",
+    "question": "كم عدد الثواني في ساعتين؟",
+    "answers": ["3600 ثانية", "7200 ثانية", "6000 ثانية", "5400 ثانية"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الساعة فيها 3600 ثانية فيكون في الساعتين 7200 ثانية."
+  },
+  {
+    "id": "int-054",
+    "question": "أي كوكب يعرف بالكوكب الأحمر؟",
+    "answers": ["الزهرة", "المشتري", "المريخ", "زحل"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "يلقب المريخ بالكوكب الأحمر بسبب غبار أكسيد الحديد على سطحه."
+  },
+  {
+    "id": "int-055",
+    "question": "إذا كان سعر 3 أقلام 12 دينارا، فما سعر 5 أقلام من النوع نفسه؟",
+    "answers": ["16 دينارا", "18 دينارا", "24 دينارا", "20 دينارا"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "سعر القلم 4 دنانير فيكون سعر خمسة أقلام 20 دينارا."
+  },
+  {
+    "id": "int-056",
+    "question": "ما العدد الأولي الزوجي الوحيد؟",
+    "answers": ["2", "4", "6", "8"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "العدد 2 هو الوحيد الزوجي والأولي معا لأن كل زوجي أكبر منه يقبل القسمة على 2."
+  },
+  {
+    "id": "int-057",
+    "question": "ما العضو الأكثر استهلاكا للأكسجين والطاقة في جسم الإنسان؟",
+    "answers": ["القلب", "الدماغ", "الكبد", "العضلات"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "يستهلك الدماغ حوالي 20% من أكسجين الجسم رغم صغر حجمه."
+  },
+  {
+    "id": "int-058",
+    "question": "ما العدد التالي في النمط: 100، 90، 81، 73، ...؟",
+    "answers": ["65", "67", "66", "64"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الفروق تتناقص واحدا كل مرة (10 ثم 9 ثم 8) فالتالي ناقص 7 أي 66."
+  },
+  {
+    "id": "int-059",
+    "question": "أي سائل من التالي يغوص في الماء لأنه أعلى كثافة منه؟",
+    "answers": ["الزيت", "الكحول", "البنزين", "العسل"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "العسل أعلى كثافة من الماء فيغوص فيه بينما الزيت والبنزين والكحول تطفو."
+  },
+  {
+    "id": "int-060",
+    "question": "إذا اشتريت سلعة بـ 250 دينارا وبعتها بـ 300 دينار، فما نسبة الربح؟",
+    "answers": ["20%", "15%", "25%", "10%"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الربح 50 دينارا و50 على 250 يساوي 20%."
+  },
+  {
+    "id": "int-061",
+    "question": "ما اللغة الأكثر تحدثا كلغة أم في العالم؟",
+    "answers": ["الإنجليزية", "الصينية الماندرين", "الإسبانية", "الهندية"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "يتحدث بالصينية الماندرين كلغة أم حوالي 900 مليون شخص وهي الأعلى عالميا."
+  },
+  {
+    "id": "int-062",
+    "question": "ثلاثة أعداد فردية متتالية مجموعها 27، فما أكبرها؟",
+    "answers": ["7", "9", "11", "13"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الأعداد هي 7 و9 و11 ومجموعها 27 وأكبرها 11."
+  },
+  {
+    "id": "int-063",
+    "question": "ما الطائر الوحيد الذي يستطيع الطيران إلى الخلف؟",
+    "answers": ["النسر", "البومة", "العصفور", "الطنان"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "طائر الطنان هو الوحيد القادر على الطيران للخلف والثبات في الهواء."
+  },
+  {
+    "id": "int-064",
+    "question": "مكعب طول ضلعه 3 سم، فما حجمه؟",
+    "answers": ["27 سم مكعب", "9 سم مكعب", "18 سم مكعب", "12 سم مكعب"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "حجم المكعب يساوي مكعب طول الضلع أي 3 تكعيب وتساوي 27."
+  },
+  {
+    "id": "int-065",
+    "question": "إذا كانت الساعة الآن السادسة صباحا، فكم ستكون الساعة بعد 10 ساعات؟",
+    "answers": ["الثالثة مساء", "الرابعة مساء", "الثانية مساء", "الخامسة مساء"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "السادسة صباحا زائد 10 ساعات تساوي السادسة عشرة أي الرابعة مساء."
+  },
+  {
+    "id": "int-066",
+    "question": "أي عنصر كيميائي رمزه O؟",
+    "answers": ["الذهب", "الهيدروجين", "الأكسجين", "الكربون"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "الرمز O يدل على عنصر الأكسجين في الجدول الدوري."
+  },
+  {
+    "id": "int-067",
+    "question": "رجل عمره 40 سنة وعمر ابنه ربع عمره، فكم عمر الابن؟",
+    "answers": ["8 سنوات", "12 سنة", "15 سنة", "10 سنوات"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "ربع الأربعين يساوي عشرة سنوات."
+  },
+  {
+    "id": "int-068",
+    "question": "أي شكل من التالي مختلف عن البقية؟",
+    "answers": ["المثلث", "المربع", "المستطيل", "المعين"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "المثلث له ثلاثة أضلاع بينما البقية أشكال رباعية."
+  },
+  {
+    "id": "int-069",
+    "question": "كم عدد الدقائق في ثلاثة أرباع الساعة؟",
+    "answers": ["30 دقيقة", "50 دقيقة", "45 دقيقة", "40 دقيقة"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "medium",
+    "explanation": "ثلاثة أرباع الستين دقيقة تساوي 45 دقيقة."
+  },
+  {
+    "id": "int-070",
+    "question": "في درج مظلم 5 قفازات يمنى و5 يسرى متشابهة، فكم قفازا يجب سحبه عشوائيا لضمان الحصول على زوج متماثل (يمنى ويسرى)؟",
+    "answers": ["6 قفازات", "3 قفازات", "5 قفازات", "11 قفازا"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "أسوأ احتمال سحب 5 من جهة واحدة فيضمن السادس الجهة الأخرى."
+  },
+  {
+    "id": "int-071",
+    "question": "ما ناتج جمع الأعداد الفردية من 1 إلى 19 (1+3+5+...+19)؟",
+    "answers": ["81", "100", "121", "90"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "مجموع أول n من الأعداد الفردية يساوي n تربيع وهنا n=10 فيكون 100."
+  },
+  {
+    "id": "int-072",
+    "question": "ما الجذر التكعيبي للعدد 125؟",
+    "answers": ["6", "5", "4", "15"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "خمسة في خمسة في خمسة تساوي 125 فالجذر التكعيبي له هو 5."
+  },
+  {
+    "id": "int-073",
+    "question": "كم عدد الأيام في 4 سنوات متتالية فيها سنة كبيسية واحدة؟",
+    "answers": ["1460 يوما", "1459 يوما", "1462 يوما", "1461 يوما"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "ثلاث سنوات عادية (1095) زائد سنة كبيسية (366) يساوي 1461 يوما."
+  },
+  {
+    "id": "int-074",
+    "question": "إذا كان الأول من يناير يوم اثنين في سنة غير كبيسة، فما يوم الأول من مارس في السنة نفسها؟",
+    "answers": ["الخميس", "الاثنين", "الثلاثاء", "الأربعاء"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "يناير 31 يوما وفبراير 28 يوما فيتقدم التاريخ 3 أيام ثم صفرا فيكون الخميس."
+  },
+  {
+    "id": "int-075",
+    "question": "ما احتمال سحب بطاقة آس من رزمة ورق لعب كاملة من 52 بطاقة؟",
+    "answers": ["1/13", "1/4", "1/52", "1/26"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "في الرزمة 4 بطاقات آس من أصل 52 أي 4 على 52 وتساوي 1 على 13."
+  },
+  {
+    "id": "int-076",
+    "question": "ما العدد الذي 15% منه يساوي 45؟",
+    "answers": ["250", "350", "300", "200"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "قسمة 45 على 0.15 تساوي 300."
+  },
+  {
+    "id": "int-077",
+    "question": "ما ثاني أطول عظمة في جسم الإنسان بعد عظمة الفخذ؟",
+    "answers": ["عظمة العضد", "عظمة الترقوة", "عظمة الظنبوب", "عظمة الكعبرة"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "تأتي عظمة الظنبوب في الساق ثانية بعد الفخذ من حيث الطول والقوة لتحمل وزن الجسم."
+  },
+  {
+    "id": "int-078",
+    "question": "ما العدد التالي في النمط: 1، 2، 6، 24، 120، ...؟",
+    "answers": ["720", "360", "480", "600"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "كل حد يضرب في عدد متزايد (2 ثم 3 ثم 4 ثم 5) فالتالي 120 في 6 أي 720."
+  },
+  {
+    "id": "int-079",
+    "question": "إذا بدأت بدينار واحد وضاعفت المبلغ كل يوم لمدة 10 أيام، فكم يصبح المبلغ في اليوم العاشر؟",
+    "answers": ["256 دينارا", "512 دينارا", "1024 دينارا", "1000 دينار"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "المبلغ يتضاعف 9 مرات من اليوم الأول فيكون 2 أس 9 أي 512."
+  },
+  {
+    "id": "int-080",
+    "question": "ما سرعة الضوء في الفراغ تقريبا؟",
+    "answers": ["150 ألف كم في الثانية", "200 ألف كم في الثانية", "300 ألف كم في الثانية", "500 ألف كم في الثانية"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "تبلغ سرعة الضوء في الفراغ حوالي 300 ألف كيلومتر في الثانية."
+  },
+  {
+    "id": "int-081",
+    "question": "إذا كان مجموع زوايا المثلث 180 درجة، فما مجموع زوايا الشكل الرباعي؟",
+    "answers": ["270 درجة", "180 درجة", "540 درجة", "360 درجة"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "يمكن تقسيم أي رباعي إلى مثلثين فيكون مجموع زواياه ضعف 180 أي 360."
+  },
+  {
+    "id": "int-082",
+    "question": "كم عدد الأصفار في المليار بالنظام القصير المتداول؟",
+    "answers": ["9 أصفار", "6 أصفار", "12 صفرا", "3 أصفار"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "المليار يساوي ألف مليون أي 1 متبوعا بتسعة أصفار."
+  },
+  {
+    "id": "int-083",
+    "question": "أي غاز يمتصه النبات في عملية البناء الضوئي ويطلق بدله الأكسجين؟",
+    "answers": ["الأكسجين", "ثاني أكسيد الكربون", "النيتروجين", "الهيدروجين"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "يمتص النبات ثاني أكسيد الكربون ويطلق الأكسجين أثناء البناء الضوئي."
+  },
+  {
+    "id": "int-084",
+    "question": "ما القيمة العشرية للعدد الثنائي 1011؟",
+    "answers": ["9", "10", "11", "12"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "العدد 1011 ثنائيا يساوي 8 زائد 2 زائد 1 أي 11 عشريا."
+  },
+  {
+    "id": "int-085",
+    "question": "متوسط 4 أعداد هو 10، فإذا أضيف إليها عدد خامس قيمته 20 فما المتوسط الجديد؟",
+    "answers": ["11", "15", "10", "12"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "hard",
+    "explanation": "المجموع القديم 40 زائد 20 يساوي 60 على 5 فيكون المتوسط 12."
+  },
+  {
+    "id": "int-086",
+    "question": "في غرفة فيها 23 شخصا، ما احتمال أن يتشارك اثنان منهم على الأقل في عيد الميلاد نفسه؟",
+    "answers": ["أكثر من 50%", "حوالي 10%", "حوالي 5%", "حوالي 90%"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "مفارقة عيد الميلاد تثبت أن الاحتمال يتجاوز 50% عند 23 شخصا فقط."
+  },
+  {
+    "id": "int-087",
+    "question": "ما ناتج 7 فاكتوريال (7!)؟",
+    "answers": ["720", "5040", "40320", "2520"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "حاصل ضرب الأعداد من 1 إلى 7 يساوي 5040."
+  },
+  {
+    "id": "int-088",
+    "question": "ما العدد الأولي الذي يلي العدد 47 مباشرة؟",
+    "answers": ["43", "49", "53", "51"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "الأعداد 48 و49 و50 و51 و52 مركبة وأول عدد أولي بعد 47 هو 53."
+  },
+  {
+    "id": "int-089",
+    "question": "إذا كانت الساعة تشير إلى السادسة والنصف تماما، فما الزاوية بين عقربي الساعة؟",
+    "answers": ["90 درجة", "30 درجة", "60 درجة", "15 درجة"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "عقرب الدقائق عند 180 درجة وعقرب الساعات عند 195 درجة فيكون الفرق 15 درجة."
+  },
+  {
+    "id": "int-090",
+    "question": "ما الكوكب الذي يدور حول محوره باتجاه معاكس لمعظم الكواكب مثل أورانوس؟",
+    "answers": ["المريخ", "الزهرة", "المشتري", "زحل"],
+    "correctAnswer": 1,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "الزهرة تدور دورانا تراجعيا حول محورها مثل أورانوس بعكس معظم الكواكب."
+  },
+  {
+    "id": "int-091",
+    "question": "أربعة أشخاص يحتاجون 1 و2 و7 و10 دقائق لعبور جسر ليلا بمصباح واحد يحمله العابر ولا يتسع الجسر لأكثر من اثنين، فما أقل زمن لعبور الجميع؟",
+    "answers": ["19 دقيقة", "15 دقيقة", "21 دقيقة", "17 دقيقة"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "الاستراتيجية المثلى (عبور السريعين ثم البطيئين معا) تحقق 17 دقيقة وهي الأقل."
+  },
+  {
+    "id": "int-092",
+    "question": "كم عدد المربعات بكل الأحجام في رقعة شطرنج 8×8؟",
+    "answers": ["204", "64", "128", "256"],
+    "correctAnswer": 0,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "مجموع مربعات الأعداد من 1 إلى 64 تربيعا لكل مقاس يساوي 204 مربعات."
+  },
+  {
+    "id": "int-093",
+    "question": "ما ثاني أكثر العناصر وفرة في الكون بعد الهيدروجين؟",
+    "answers": ["الأكسجين", "الكربون", "الهيليوم", "الحديد"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "يشكل الهيليوم نحو 24% من كتلة الكون المرئي فيأتي ثانيا بعد الهيدروجين الذي يشكل نحو 75%."
+  },
+  {
+    "id": "int-094",
+    "question": "إذا رميت حجر نرد عادلا مرتين، فما احتمال أن يكون مجموع النتيجتين 12؟",
+    "answers": ["1/12", "1/18", "1/36", "1/6"],
+    "correctAnswer": 2,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "المجموع 12 يتحقق بحالة واحدة (6 و6) من أصل 36 حالة ممكنة."
+  },
+  {
+    "id": "int-095",
+    "question": "ما العدد الذي إذا قسمته على نفسه ثم أضفت إليه نفسه كان الناتج 11؟",
+    "answers": ["9", "12", "8", "10"],
+    "correctAnswer": 3,
+    "category": "intelligence",
+    "difficulty": "expert",
+    "explanation": "أي عدد على نفسه يساوي 1 فيكون 1 زائد العدد 11 أي العدد 10."
+  }
+]

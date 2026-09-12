@@ -11,7 +11,9 @@ export type CategoryId =
   | "body"
   | "language"
   | "algeria"
-  | "arab"
+  | "middle-east"
+  | "north-africa"
+  | "amazigh"
   | "islamic"
   | "everyday";
 
