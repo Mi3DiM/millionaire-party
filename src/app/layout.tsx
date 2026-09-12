@@ -59,7 +59,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${plexArabic.variable} min-h-screen flex flex-col antialiased`}>
         <AppProviders>{children}</AppProviders>
       </body>
