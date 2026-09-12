@@ -14,7 +14,7 @@ import { PrizeLadder } from "@/components/game/PrizeLadder";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
-import { Halftime, WagerDialog, RevealVeil, FlyingGain } from "@/components/game/StageFx";
+import { Halftime, RevealVeil, FlyingGain } from "@/components/game/StageFx";
 import { MatchStatusBar } from "@/components/game/MatchStatusBar";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
@@ -182,6 +182,8 @@ export default function GamePage() {
             showTournament={s.settings.tournament && s.stages.length > 1}
             speed={kind === "speed" && !isReveal}
             streak={me?.streak ?? 0}
+            needWager={needWager}
+            onWager={(pct) => { s.placeWager(pct); haptics.tap(); }}
           />
           <div className="flex items-center justify-between gap-3">
             {!isReveal ? (
@@ -201,10 +203,6 @@ export default function GamePage() {
             <p className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 p-3 text-center text-sm">
               <GameIcon name="eye" size={18} /> أنت في الجمهور الآن — شاهد بقية {STAGE_META[kind].ar}!
             </p>
-          )}
-
-          {kind === "wager" && !isReveal && !meEliminated && (
-            <WagerDialog prize={me?.prize ?? 0} currency={s.settings.currency} current={myWager} onPick={(pct) => { s.placeWager(pct); haptics.tap(); }} />
           )}
 
           <AnimatePresence mode="wait">

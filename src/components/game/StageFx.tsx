@@ -101,38 +101,6 @@ export function Halftime({
   );
 }
 
-export function WagerDialog({
-  prize,
-  currency,
-  current,
-  onPick,
-}: {
-  prize: number;
-  currency: string;
-  current: number | undefined;
-  onPick: (pct: 25 | 50 | 100) => void;
-}) {
-  if (current !== undefined) {
-    return (
-      <p className="rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 p-3 text-center text-sm font-bold">
-        رهانك: {current}% من {formatPrize(prize, currency)} — أجب الآن!
-      </p>
-    );
-  }
-  return (
-    <div className="anim-pop rounded-3xl border border-[var(--accent)]/40 bg-[var(--accent)]/8 p-4" role="group" aria-label="اختر رهانك">
-      <p className="flex items-center justify-center gap-2 text-center text-sm font-black"><GameIcon name="cup" size={18} /> كم تراهن من رصيدك ({formatPrize(prize, currency)})؟</p>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {([25, 50, 100] as const).map((pct) => (
-          <Button key={pct} variant={pct === 100 ? "gold" : "secondary"} onClick={() => onPick(pct)}>
-            {pct}%
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Lightweight canvas confetti (no dependency). Respects reduced motion. */
 export function Confetti({ fire }: { fire: boolean }) {
   const ref = React.useRef<HTMLCanvasElement>(null);
