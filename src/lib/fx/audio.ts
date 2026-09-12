@@ -1,7 +1,8 @@
 /**
- * Professional game SFX synthesized with WebAudio — zero assets, offline-friendly.
+ * Dramatic layered game SFX synthesized with WebAudio — zero assets, offline-friendly.
  * Initialized lazily on first user gesture (browser autoplay policy).
- * Honors `millionaire:sound` (sfx) and `millionaire:music` toggles.
+ * Toggles: `millionaire:sound` (sfx), `millionaire:music` (ambient),
+ * `millionaire:intensity` = "dramatic" (default) | "calm".
  */
 import * as React from "react";
 
@@ -23,6 +24,16 @@ export function musicEnabled(): boolean {
     return localStorage.getItem("millionaire:music") === "on";
   } catch {
     return false;
+  }
+}
+
+export type Intensity = "dramatic" | "calm";
+
+export function intensity(): Intensity {
+  try {
+    return localStorage.getItem("millionaire:intensity") === "calm" ? "calm" : "dramatic";
+  } catch {
+    return "dramatic";
   }
 }
 
@@ -77,80 +88,187 @@ function tone({ freq, at = 0, dur = 0.15, type = "sine", vol = 0.5, slideTo }: T
   } catch {}
 }
 
+/** Filtered-noise burst (crowd swells, impacts). */
+function noise({ at = 0, dur = 0.4, vol = 0.2, freq = 1200, q = 0.8 }: { at?: number; dur?: number; vol?: number; freq?: number; q?: number }) {
+  const c = ac();
+  if (!c || !master) return;
+  try {
+    const t0 = c.currentTime + at;
+    const len = Math.max(1, Math.floor(c.sampleRate * dur));
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const f = c.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const g = c.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f);
+    f.connect(g);
+    g.connect(master);
+    src.start(t0);
+  } catch {}
+}
+
+/** Pure helper (testable): countdown tick plan for remaining seconds. */
+export function countdownPlan(left: number): { freq: number; critical: boolean } | null {
+  if (left > 10 || left <= 0) return null;
+  if (left <= 3) return { freq: 1174 + (3 - left) * 120, critical: true };
+  if (left <= 5) return { freq: 987, critical: true };
+  return { freq: 740 + (10 - left) * 24, critical: false };
+}
+
 export const sfx = {
   click() {
-    tone({ freq: 660, dur: 0.06, type: "triangle", vol: 0.25 });
+    if (intensity() === "calm") {
+      tone({ freq: 660, dur: 0.05, type: "triangle", vol: 0.2 });
+      return;
+    }
+    // Premium two-layer click: bright tick + low thump.
+    tone({ freq: 880, dur: 0.045, type: "triangle", vol: 0.22 });
+    tone({ freq: 220, dur: 0.07, type: "sine", vol: 0.2 });
+  },
+  /** Distinct tick the moment an answer option is tapped (before lock). */
+  select() {
+    if (intensity() === "calm") {
+      tone({ freq: 740, dur: 0.05, type: "triangle", vol: 0.2 });
+      return;
+    }
+    tone({ freq: 920, dur: 0.06, type: "triangle", vol: 0.3, slideTo: 1240 });
   },
   join() {
     tone({ freq: 523, dur: 0.1, type: "triangle", vol: 0.35 });
     tone({ freq: 784, at: 0.09, dur: 0.14, type: "triangle", vol: 0.35 });
+    if (intensity() === "dramatic") tone({ freq: 1046, at: 0.18, dur: 0.16, type: "triangle", vol: 0.3 });
   },
   lock() {
-    tone({ freq: 440, dur: 0.08, type: "square", vol: 0.18 });
-    tone({ freq: 660, at: 0.07, dur: 0.1, type: "square", vol: 0.18 });
+    if (intensity() === "calm") {
+      tone({ freq: 520, dur: 0.07, type: "triangle", vol: 0.25 });
+      return;
+    }
+    // Satisfying mechanical "clunk": low thud + metallic ping.
+    tone({ freq: 180, dur: 0.1, type: "sine", vol: 0.45, slideTo: 120 });
+    tone({ freq: 1320, at: 0.02, dur: 0.09, type: "triangle", vol: 0.2 });
+    noise({ dur: 0.06, vol: 0.12, freq: 3000, q: 1.5 });
   },
-  tick() {
-    tone({ freq: 880, dur: 0.05, type: "square", vol: 0.16 });
-  },
-  tickCritical() {
-    tone({ freq: 1174, dur: 0.07, type: "square", vol: 0.24 });
-  },
-  /** Call every second with remaining seconds; ticks only in last 5. */
+  /** Rising-pitch ticks across the last 10 seconds; heartbeat under 3. */
   countdownTick(left: number) {
-    if (left > 5 || left <= 0 || left === lastTickSecond) return;
+    if (left === lastTickSecond) return;
+    const plan = countdownPlan(left);
+    if (!plan) return;
     lastTickSecond = left;
-    if (left <= 3) this.tickCritical();
-    else this.tick();
+    if (intensity() === "calm") {
+      tone({ freq: plan.freq, dur: 0.05, type: "triangle", vol: 0.18 });
+      return;
+    }
+    tone({ freq: plan.freq, dur: plan.critical ? 0.09 : 0.06, type: "square", vol: plan.critical ? 0.26 : 0.16 });
+    if (plan.critical) {
+      // Heartbeat thump under the tick.
+      tone({ freq: 65, dur: 0.12, type: "sine", vol: 0.4 });
+      tone({ freq: 58, at: 0.14, dur: 0.14, type: "sine", vol: 0.35 });
+    }
   },
   correct() {
-    tone({ freq: 523, dur: 0.12, type: "triangle", vol: 0.4 });
-    tone({ freq: 659, at: 0.1, dur: 0.12, type: "triangle", vol: 0.4 });
-    tone({ freq: 784, at: 0.2, dur: 0.22, type: "triangle", vol: 0.45 });
+    if (intensity() === "calm") {
+      tone({ freq: 659, dur: 0.12, type: "triangle", vol: 0.35 });
+      tone({ freq: 880, at: 0.1, dur: 0.18, type: "triangle", vol: 0.35 });
+      return;
+    }
+    // Bright 5-note arpeggio + shimmer + crowd swell.
+    [523, 659, 784, 1046, 1318].forEach((f, i) =>
+      tone({ freq: f, at: i * 0.07, dur: 0.18, type: "triangle", vol: 0.38 })
+    );
+    tone({ freq: 2093, at: 0.3, dur: 0.3, type: "sine", vol: 0.15 });
+    noise({ at: 0.1, dur: 0.7, vol: 0.1, freq: 1800, q: 0.6 });
+  },
+  /** Streak bonus: pitch climbs with the streak level. */
+  streak(level: number) {
+    const base = 660 + Math.min(level, 8) * 60;
+    tone({ freq: base, dur: 0.1, type: "triangle", vol: 0.35, slideTo: base * 1.5 });
+    if (intensity() === "dramatic") {
+      tone({ freq: base * 2, at: 0.06, dur: 0.14, type: "sine", vol: 0.2 });
+    }
   },
   wrong() {
-    tone({ freq: 220, dur: 0.2, type: "sawtooth", vol: 0.25, slideTo: 140 });
-    tone({ freq: 165, at: 0.16, dur: 0.3, type: "sawtooth", vol: 0.25, slideTo: 110 });
+    if (intensity() === "calm") {
+      tone({ freq: 220, dur: 0.2, type: "sine", vol: 0.3, slideTo: 160 });
+      return;
+    }
+    // Cinematic braam: stacked falling saws + impact noise.
+    tone({ freq: 196, dur: 0.35, type: "sawtooth", vol: 0.3, slideTo: 98 });
+    tone({ freq: 147, at: 0.05, dur: 0.4, type: "sawtooth", vol: 0.28, slideTo: 73 });
+    tone({ freq: 98, at: 0.1, dur: 0.5, type: "sine", vol: 0.4, slideTo: 55 });
+    noise({ dur: 0.25, vol: 0.16, freq: 300, q: 0.7 });
   },
   prizeUp() {
-    [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, at: i * 0.08, dur: 0.16, type: "triangle", vol: 0.4 }));
+    [523, 659, 784, 1046, 1318, 1568].forEach((f, i) =>
+      tone({ freq: f, at: i * 0.07, dur: 0.16, type: "triangle", vol: 0.38 })
+    );
+    if (intensity() === "dramatic") noise({ at: 0.2, dur: 0.8, vol: 0.1, freq: 2000, q: 0.6 });
   },
   rankUp() {
     tone({ freq: 784, dur: 0.1, type: "sine", vol: 0.35, slideTo: 1174 });
+    if (intensity() === "dramatic") tone({ freq: 1568, at: 0.08, dur: 0.14, type: "sine", vol: 0.25 });
   },
   stageHorn() {
-    tone({ freq: 392, dur: 0.18, type: "brass" as OscillatorType, vol: 0.3 });
-    tone({ freq: 523, at: 0.15, dur: 0.18, type: "brass" as OscillatorType, vol: 0.3 });
-    tone({ freq: 659, at: 0.3, dur: 0.3, type: "brass" as OscillatorType, vol: 0.35 });
+    if (intensity() === "calm") {
+      tone({ freq: 523, dur: 0.15, type: "triangle", vol: 0.3 });
+      tone({ freq: 659, at: 0.12, dur: 0.2, type: "triangle", vol: 0.3 });
+      return;
+    }
+    tone({ freq: 196, dur: 0.25, type: "sawtooth", vol: 0.22 });
+    [392, 523, 659, 784].forEach((f, i) =>
+      tone({ freq: f, at: 0.12 + i * 0.11, dur: 0.22, type: "triangle", vol: 0.34 })
+    );
+    noise({ at: 0.1, dur: 0.5, vol: 0.08, freq: 900, q: 0.7 });
   },
   victory() {
-    [523, 523, 659, 784, 784, 1046, 784, 1046].forEach((f, i) =>
-      tone({ freq: f, at: i * 0.13, dur: 0.2, type: "triangle", vol: 0.4 })
-    );
+    const seq = intensity() === "calm"
+      ? [523, 659, 784, 1046]
+      : [523, 523, 659, 784, 784, 1046, 784, 1046, 1318];
+    seq.forEach((f, i) => tone({ freq: f, at: i * 0.13, dur: 0.22, type: "triangle", vol: 0.4 }));
+    if (intensity() === "dramatic") noise({ at: 0.3, dur: 1.4, vol: 0.12, freq: 1800, q: 0.5 });
   },
   defeat() {
     [392, 370, 349, 311].forEach((f, i) => tone({ freq: f, at: i * 0.16, dur: 0.24, type: "sine", vol: 0.35 }));
   },
 };
 
-export function startMusic() {
+export type MusicMood = "soft" | "tense" | "off";
+
+export function startMusic(mood: MusicMood = "soft") {
   stopMusic();
-  if (!musicEnabled()) return;
+  if (!musicEnabled() || mood === "off") return;
   const c = ac();
   if (!c || !master) return;
   try {
-    // Soft ambient pad: two detuned triangles + slow LFO. Subtle by design.
-    const freqs = [110, 164.8, 220];
+    // Ambient pad; tense mood adds a pulsing fifth + quicker shimmer.
+    const freqs = mood === "tense" ? [110, 164.8, 220, 277.2] : [110, 164.8, 220];
     freqs.forEach((f) => {
       const o = c.createOscillator();
       const g = c.createGain();
       o.type = "triangle";
       o.frequency.value = f;
-      g.gain.value = 0.035;
+      g.gain.value = mood === "tense" ? 0.045 : 0.032;
       o.connect(g);
       g.connect(master!);
       o.start();
       musicNodes.push(o);
     });
+    if (mood === "tense") {
+      // Slow pulse LFO on the master of the pad via periodic gain wobble.
+      const lfo = c.createOscillator();
+      const lg = c.createGain();
+      lfo.frequency.value = 1.6;
+      lg.gain.value = 0.012;
+      lfo.connect(lg);
+      musicNodes.push(lfo as unknown as OscillatorNode);
+      lfo.start();
+    }
   } catch {}
 }
 
@@ -163,12 +281,13 @@ export function stopMusic() {
   musicNodes = [];
 }
 
-/** Global click blips for buttons + answer options. Mount once in providers. */
+/** Global click blips. Mount once in providers. Skips [data-no-blip] zones. */
 export function useGlobalClickSfx() {
   React.useEffect(() => {
     const onDown = () => unlockAudio();
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
+      if (t.closest("[data-no-blip]")) return;
       if (t.closest("button, [role='button'], select, input[type='checkbox']")) sfx.click();
     };
     document.addEventListener("pointerdown", onDown);

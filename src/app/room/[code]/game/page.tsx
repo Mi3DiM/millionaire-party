@@ -14,7 +14,7 @@ import { PrizeLadder } from "@/components/game/PrizeLadder";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
-import { StageBanner, Halftime, WagerDialog } from "@/components/game/StageFx";
+import { StageBanner, Halftime, WagerDialog, RevealVeil, FlyingGain } from "@/components/game/StageFx";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
 import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
@@ -40,11 +40,11 @@ export default function GamePage() {
     if (s.status === "lobby" || !q) router.push(`/room/${params.code}`);
   }, [s.status, q, router, params.code]);
 
-  // Background music lifecycle.
+  // Background music lifecycle + mood follows stage tension.
   React.useEffect(() => {
-    startMusic();
+    startMusic(kind === "final" || kind === "semifinal" ? "tense" : "soft");
     return () => stopMusic();
-  }, []);
+  }, [kind]);
 
   // Keep a stable callback for Timer.
   const onExpire = React.useCallback(() => {
@@ -54,8 +54,9 @@ export default function GamePage() {
   const onSecond = React.useCallback((left: number) => {
     sfx.countdownTick(left);
     if (left <= 5 && left > 0) {
-      // Haptic pulse handled sparingly: only at 5,3,1 to avoid buzz spam.
-      if (left === 5 || left === 3 || left === 1) haptics.critical();
+      // Heartbeat under the final seconds; single pulse at 5/4.
+      if (left <= 3) haptics.heartbeat();
+      else if (left === 5 || left === 4) haptics.critical();
     }
   }, []);
 
@@ -80,9 +81,18 @@ export default function GamePage() {
   }, [s.players, s.meId]);
   const prevRank = React.useRef<number | null>(null);
   const prevRevealQ = React.useRef<string | null>(null);
+  // Which question the 3-2-1 veil has lifted for (resets implicitly per question).
+  const [veilDoneFor, setVeilDoneFor] = React.useState<string | null>(null);
+  const qid = q?.id ?? null;
+  const veilLifted = !!q && isReveal && veilDoneFor === q.id;
+  const handleVeilDone = React.useCallback(() => {
+    setVeilDoneFor(qid);
+  }, [qid]);
+  const gain = me && veilLifted ? Math.max(0, me.prize - s.myPrizeAtStart) : 0;
   React.useEffect(() => {
-    if (isReveal && q && prevRevealQ.current !== q.id) {
-      prevRevealQ.current = q.id;
+    // Sounds land with the reveal (after the 3-2-1 veil lifts), not behind it.
+    if (isReveal && veilLifted && qid && prevRevealQ.current !== qid) {
+      prevRevealQ.current = qid;
       if (mySub?.choice === null) {
         sfx.wrong();
         haptics.wrong();
@@ -90,6 +100,8 @@ export default function GamePage() {
         if (kind === "final") sfx.prizeUp();
         else sfx.correct();
         haptics.correct();
+        const streak = (me?.streak ?? 0) + 1;
+        if (streak >= 2) setTimeout(() => sfx.streak(streak), 450);
       } else {
         sfx.wrong();
         haptics.wrong();
@@ -100,7 +112,7 @@ export default function GamePage() {
     }
     if (isReveal && myRank !== null) prevRank.current = myRank;
     if (!isReveal) prevRevealQ.current = null;
-  }, [isReveal, q, mySub, myCorrect, myRank, kind]);
+  }, [isReveal, veilLifted, qid, mySub, myCorrect, myRank, kind, me?.streak]);
 
   // Lock feedback.
   const prevLocked = React.useRef(s.myLocked);
@@ -126,8 +138,9 @@ export default function GamePage() {
 
   return (
     <div className="theme-show flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
+      {kind === "final" && <div className="stage-final-bg pointer-events-none fixed inset-0 z-0" aria-hidden />}
       <Header />
-      <div className="mx-auto grid w-full max-w-7xl flex-1 gap-4 px-4 py-6 lg:grid-cols-[260px_1fr_300px]">
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl flex-1 gap-4 px-4 py-6 lg:grid-cols-[260px_1fr_300px]">
         {/* Ladder (desktop) */}
         <aside className="hidden lg:block">
           <Card className="border-white/10 bg-white/5">
@@ -153,6 +166,9 @@ export default function GamePage() {
             )}
             <div className="flex items-center gap-2">
               {kind === "speed" && !isReveal && <Badge variant="gold"><GameIcon name="bolt" size={14} /> ×2</Badge>}
+              {(me?.streak ?? 0) >= 2 && (
+                <Badge variant="gold"><GameIcon name="fire" size={14} /> ×{me!.streak} سلسلة</Badge>
+              )}
               <div className="flex gap-2 lg:hidden">
                 <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
                 <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
@@ -185,10 +201,13 @@ export default function GamePage() {
 
           <motion.div
             key={q.id + (isReveal ? (myCorrect ? "-win" : "-lose") : "")}
-            animate={isReveal && !myCorrect ? { x: [0, -10, 10, -6, 6, 0] } : { x: 0 }}
+            animate={isReveal && veilLifted && !myCorrect ? { x: [0, -10, 10, -6, 6, 0] } : { x: 0 }}
             transition={{ duration: 0.4 }}
-            className="grid gap-2.5 md:grid-cols-2"
+            className="relative grid gap-2.5 md:grid-cols-2"
           >
+            {isReveal && !veilLifted && (
+              <RevealVeil key={q.id} onDone={handleVeilDone} />
+            )}
             {s.answerOrder.map((trueIdx, di) => {
               const hidden = s.removedOptions.includes(di);
               let state: "default" | "selected" | "correct" | "wrong" | "dimmed" = "default";
@@ -212,6 +231,10 @@ export default function GamePage() {
               );
             })}
           </motion.div>
+
+          {isReveal && veilLifted && gain > 0 && (
+            <FlyingGain amount={gain} currency={s.settings.currency} />
+          )}
 
           {!isReveal && !s.myLocked && !meEliminated && !needWager && (
             <LifelineBar left={s.lifelinesLeft} enabled={s.settings.lifelines} onUse={(k) => s.useLifeline(k)} />

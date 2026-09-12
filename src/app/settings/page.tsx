@@ -41,6 +41,13 @@ export default function SettingsPage() {
       return true;
     }
   });
+  const [calm, setCalm] = React.useState(() => {
+    try {
+      return typeof window === "undefined" ? false : localStorage.getItem("millionaire:intensity") === "calm";
+    } catch {
+      return false;
+    }
+  });
 
   const save = (k: string, v: string) => {
     try { localStorage.setItem(k, v); } catch {}
@@ -67,6 +74,7 @@ export default function SettingsPage() {
               <Switch checked={sound} onCheckedChange={(v) => { setSound(v); save("millionaire:sound", v ? "on" : "off"); }} label="المؤثرات الصوتية (اختيارية)" />
               <Switch checked={music} onCheckedChange={(v) => { setMusic(v); save("millionaire:music", v ? "on" : "off"); }} label="موسيقى خلفية هادئة أثناء اللعب" />
               <Switch checked={hapticsOn} onCheckedChange={(v) => { setHapticsOn(v); save("millionaire:haptics", v ? "on" : "off"); }} label="اهتزاز الهاتف عند الأحداث" />
+              <Switch checked={calm} onCheckedChange={(v) => { setCalm(v); save("millionaire:intensity", v ? "calm" : "dramatic"); }} label="الوضع الهادئ (أصوات وحركات مخففة)" />
               <Switch checked={motion} onCheckedChange={(v) => { setMotion(v); save("millionaire:motion", v ? "full" : "reduced"); document.documentElement.style.setProperty("scroll-behavior", v ? "smooth" : "auto"); }} label="الحركة الكاملة (أوقفها لتقليل الحركة)" />
               <Button size="sm" variant="secondary" onClick={() => push({ title: "حُفظت الإعدادات", kind: "success" })}>حفظ</Button>
             </CardContent></Card>

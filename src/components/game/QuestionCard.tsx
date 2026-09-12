@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { GameIcon } from "@/components/ui/GameIcon";
+import { sfx } from "@/lib/fx/audio";
+import { haptics } from "@/lib/fx/haptics";
 import { categoryName, difficultyName } from "@/data/questions";
 import { useI18n } from "@/i18n/provider";
 
@@ -28,12 +30,20 @@ export function AnswerOption({
       type="button"
       disabled={disabled}
       onClick={onPick}
+      onPointerDown={() => {
+        // Distinct "select" tick at tap-time (lock sound follows on confirm).
+        if (!disabled && state === "default") {
+          sfx.select();
+          haptics.select();
+        }
+      }}
+      data-no-blip
       aria-pressed={state === "selected"}
       className={cn(
         "group flex min-h-[60px] w-full cursor-pointer items-center gap-3 rounded-2xl border-2 p-3.5 text-start transition-all active:scale-[0.99]",
         state === "default" && "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--primary)] hover:bg-[var(--elevated)]",
         state === "selected" && "border-[var(--primary)] bg-[var(--primary)]/10",
-        state === "correct" && "border-[var(--success)] bg-[var(--success)]/15",
+        state === "correct" && "anim-win-glow border-[var(--success)] bg-[var(--success)]/15",
         state === "wrong" && "border-[var(--danger)] bg-[var(--danger)]/10",
         state === "dimmed" && "border-[var(--border)] opacity-35",
         disabled && state === "default" && "cursor-default"

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { formatPrize } from "@/lib/utils";
 import { useI18n } from "@/i18n/provider";
+import { sfx } from "@/lib/fx/audio";
 
 export function StageBanner({ kind, index, total }: { kind: StageKind; index: number; total: number }) {
   const { locale } = useI18n();
@@ -188,4 +189,57 @@ export function CountUp({ value, currency }: { value: number; currency: string }
     return () => cancelAnimationFrame(raf);
   }, [value]);
   return <span className="prize-num tabular-nums">{formatPrize(shown, currency)}</span>;
+}
+
+/** Cinematic 3-2-1 veil before the reveal lands. Remount per question via key. */
+export function RevealVeil({ onDone }: { onDone: () => void }) {
+  const [n, setN] = React.useState(3);
+  React.useEffect(() => {
+    const timers = [3, 2, 1].map((v, i) =>
+      setTimeout(() => {
+        setN(v);
+        sfx.select();
+      }, i * 320)
+    );
+    const done = setTimeout(onDone, 3 * 320 + 120);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(done);
+    };
+  }, [onDone]);
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-black/55 backdrop-blur-[2px]"
+    >
+      <motion.span
+        key={n}
+        initial={{ scale: 1.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="prize-num text-7xl font-black text-[var(--accent)] tabular-nums"
+      >
+        {n}
+      </motion.span>
+    </motion.div>
+  );
+}
+
+/** Floating "+prize" gain that rises from the answers toward the balance. */
+export function FlyingGain({ amount, currency }: { amount: number; currency: string }) {
+  if (amount <= 0) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.9 }}
+      animate={{ opacity: [0, 1, 1, 0], y: [24, 0, -28, -56], scale: 1 }}
+      transition={{ duration: 1.6, ease: "easeOut" }}
+      className="pointer-events-none flex justify-center"
+      aria-hidden
+    >
+      <span className="prize-num rounded-full bg-[var(--success)]/20 px-4 py-1.5 text-lg font-black text-[var(--success)] tabular-nums">
+        +{formatPrize(amount, currency)}
+      </span>
+    </motion.div>
+  );
 }
