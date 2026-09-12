@@ -1,69 +1,109 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useI18n } from "@/i18n/provider";
+import { Header, Footer, PageContainer } from "@/components/app/shell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ALL_QUESTIONS, CATEGORIES } from "@/data/questions";
+import { formatPrize } from "@/lib/utils";
+import { DEFAULT_PRIZE_LADDER } from "@/lib/game/types";
 
 export default function Home() {
+  const { dict, locale } = useI18n();
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <PageContainer>
+        {/* HERO */}
+        <section className="grid items-center gap-8 py-10 md:grid-cols-[1.1fr_0.9fr]">
+          <div className="flex flex-col gap-5">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+              <Badge variant="gold">بدون حسابات · غرف خاصة · نفس الأسئلة للجميع</Badge>
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="text-4xl font-black leading-[1.4] md:text-5xl md:leading-[1.4]"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+              {dict.heroTitle}
+            </motion.h1>
+            <p className="max-w-xl text-[16px] leading-[2] text-[var(--muted)]">{dict.heroSub}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/create">
+                <Button size="lg" variant="gold">{dict.createRoom}</Button>
+              </Link>
+              <Link href="/join">
+                <Button size="lg" variant="secondary">{dict.joinRoom}</Button>
+              </Link>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[13px] text-[var(--muted)]">
+              <Link href="/how-to-play" className="rounded-xl px-3 py-1.5 hover:bg-[var(--elevated)]">← {dict.howToPlay}</Link>
+              <Link href="/categories" className="rounded-xl px-3 py-1.5 hover:bg-[var(--elevated)]">← {dict.categories}</Link>
+            </div>
+          </div>
+
+          {/* Prize visual */}
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
+            <Card className="theme-show overflow-hidden border-[var(--accent)]/30 bg-[#0a0c16] text-[#f5f1e4]">
+              <CardContent className="flex flex-col gap-2 p-5">
+                <div className="flex items-center justify-between">
+                  <b className="text-sm">سلّم الجوائز</b>
+                  <Badge variant="gold">{ALL_QUESTIONS.length} سؤالاً · {CATEGORIES.length} فئة</Badge>
+                </div>
+                {[...DEFAULT_PRIZE_LADDER].reverse().slice(0, 8).map((v, i) => (
+                  <div
+                    key={v}
+                    className={`prize-num flex justify-between rounded-xl px-3 py-1.5 text-[13px] tabular-nums ${i === 2 ? "anim-glow bg-[var(--accent)] font-black text-[#1a1405]" : "bg-white/5 text-white/70"}`}
+                  >
+                    <span>المستوى {15 - i}</span>
+                    <span>{formatPrize(v, "دج")}</span>
+                  </div>
+                ))}
+                <p className="mt-1 text-center text-[12px] text-white/50">نفس السؤال · نفس المؤقت · كشف متزامن</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </section>
+
+        {/* HOW IT WORKS */}
+        <section className="grid gap-3 py-6 md:grid-cols-4">
+          {[
+            { t: "أنشئ غرفة", d: "اختر الفئات والصعوبة والمؤقت ووسائل المساعدة.", i: "◈" },
+            { t: "شارك الرمز", d: "رمز قصير + رابط + QR. انضمام بالاسم فقط.", i: "⎙" },
+            { t: "أجيبوا معاً", d: "نفس الأسئلة للجميع تحت نفس المؤقت.", i: "◷" },
+            { t: "اصعد السلّم", d: "السرعة والدقة تصنعان الفائز بالمليون.", i: "♛" },
+          ].map((s, i) => (
+            <motion.div key={s.t} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <Card>
+                <CardContent className="flex flex-col gap-2 p-5">
+                  <span className="text-2xl" aria-hidden>{s.i}</span>
+                  <b>{s.t}</b>
+                  <p className="text-[13.5px] leading-relaxed text-[var(--muted)]">{s.d}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </section>
+
+        {/* CATEGORIES STRIP */}
+        <section className="py-6">
+          <h2 className="mb-3 text-lg font-black">{locale === "ar" ? "فئات الأسئلة" : "Categories"}</h2>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((c) => (
+              <Link key={c.id} href="/categories">
+                <Badge variant="default" className="cursor-pointer px-3 py-1.5 text-[13px] hover:border-[var(--primary)]">
+                  {locale === "ar" ? c.ar : c.en}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </PageContainer>
+      <Footer />
     </div>
   );
 }

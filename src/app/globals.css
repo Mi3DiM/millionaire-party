@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --font-sans: var(--font-plex-arabic), "IBM Plex Sans Arabic", system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #f7f5ef;
+  --foreground: #1a1c22;
+  --surface: #ffffff;
+  --elevated: #ffffff;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #7c3aed;
+  --accent: #d4a017;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --muted: #6b7280;
+  --border: #e5e1d5;
+  --ring: #1d4ed8;
+  --radius: 1rem;
+  --shadow-card: 0 1px 2px rgb(26 28 34 / 0.05), 0 8px 24px -12px rgb(26 28 34 / 0.18);
+  --shadow-pop: 0 12px 40px -12px rgb(26 28 34 / 0.35);
+}
+
+.dark {
+  --background: #0c0e14;
+  --foreground: #f2f0e8;
+  --surface: #141824;
+  --elevated: #1b2132;
+  --primary: #6d9bff;
+  --primary-foreground: #0c0e14;
+  --secondary: #a78bfa;
+  --accent: #e8b923;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --muted: #9aa1b2;
+  --border: #262d42;
+  --ring: #6d9bff;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.6);
+  --shadow-pop: 0 20px 60px -16px rgb(0 0 0 / 0.7);
+}
+
+/* Show atmosphere: deep stage theme used inside game screen */
+.theme-show {
+  --background: #0a0c16;
+  --foreground: #f5f1e4;
+  --surface: #12172a;
+  --elevated: #1a2140;
+  --primary: #7aa5ff;
+  --accent: #f0c420;
+  --border: #2a3360;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-plex-arabic), "IBM Plex Sans Arabic", system-ui, sans-serif;
+  font-feature-settings: "tnum" 1, "ss01" 1;
+  -webkit-font-smoothing: antialiased;
 }
+
+.prize-num {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Focus visibility (a11y) */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Subtle animations */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(240 196 32 / 0.35); }
+  50% { box-shadow: 0 0 0 8px rgb(240 196 32 / 0); }
+}
+.anim-rise { animation: rise-in 0.35s ease both; }
+.anim-pop { animation: pop-in 0.25s ease both; }
+.anim-glow { animation: glow-pulse 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* Timer ring */
+.timer-critical { color: var(--danger) !important; }
+.timer-warning { color: var(--warning) !important; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
