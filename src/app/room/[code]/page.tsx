@@ -13,6 +13,7 @@ import { useRoom } from "@/lib/game/store";
 import { categoryName, difficultyName } from "@/data/questions";
 import { useI18n } from "@/i18n/provider";
 import type { QuestionBank } from "@/lib/game/types";
+import { MATCH_PRESETS } from "@/lib/game/types";
 import { useToast } from "@/components/ui/toast";
 
 export default function LobbyPage() {
@@ -64,7 +65,9 @@ export default function LobbyPage() {
               <CardContent className="flex flex-col gap-2 text-[13.5px]">
                 <Row k="الفئات" v={s.settings.categories.includes("mixed") ? "منوعة" : s.settings.categories.map((c) => categoryName(c, locale)).join("، ")} />
                 <Row k="الصعوبة" v={difficultyName(s.settings.difficulty, locale)} />
-                <Row k="الأسئلة" v={`${s.settings.questionCount}`} />
+                <Row k="المدة" v={`${MATCH_PRESETS[s.settings.matchLength]?.ar ?? s.settings.matchLength} · ${MATCH_PRESETS[s.settings.matchLength]?.minutes ?? ""}`} />
+                <Row k="النظام" v={s.settings.tournament ? "🏆 بطولة مراحل" : "جولة كلاسيكية"} />
+                <Row k="الأسئلة" v={`${s.settings.questionCount}${s.settings.tournament ? " + جولات خاصة" : ""}`} />
                 <Row k="المؤقت" v={`${s.settings.timerSeconds}s`} />
                 <Row k="اللاعبون" v={`${s.players.length} / ${s.settings.maxPlayers}`} />
                 <Row k="البنك" v={s.bank?.name ?? "—"} />

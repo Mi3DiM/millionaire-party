@@ -3,6 +3,12 @@
 import * as React from "react";
 import { I18nProvider } from "@/i18n/provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { useGlobalClickSfx } from "@/lib/fx/audio";
+
+function SfxMount() {
+  useGlobalClickSfx();
+  return null;
+}
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
@@ -24,6 +30,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <I18nProvider>
       <ToastProvider>
+        <SfxMount />
         <ThemeCtx.Provider value={{ theme, setTheme }}>{children}</ThemeCtx.Provider>
       </ToastProvider>
     </I18nProvider>

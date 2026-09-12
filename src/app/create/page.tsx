@@ -10,7 +10,7 @@ import { Select, Switch } from "@/components/ui/select";
 import { Avatar, AVATARS } from "@/components/ui/avatar";
 import { useRoom } from "@/lib/game/store";
 import { builtinBanks, CATEGORIES, difficultyName } from "@/data/questions";
-import { DEFAULT_SETTINGS, type QuestionBank, type RoomSettings } from "@/lib/game/types";
+import { DEFAULT_SETTINGS, MATCH_PRESETS, type MatchLength, type QuestionBank, type RoomSettings } from "@/lib/game/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 
@@ -88,7 +88,7 @@ export default function CreateRoomPage() {
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <Select label="الصعوبة" value={settings.difficulty} onValueChange={(v) => setSettings((s) => ({ ...s, difficulty: v as RoomSettings["difficulty"] }))} options={["mixed", "easy", "medium", "hard", "expert"].map((d) => ({ value: d, label: difficultyName(d) }))} />
-                <Select label="عدد الأسئلة" value={String(settings.questionCount)} onValueChange={(v) => setSettings((s) => ({ ...s, questionCount: Number(v) }))} options={[5, 8, 10, 12, 15].map((n) => ({ value: String(n), label: `${n} أسئلة` }))} />
+                <Select label="عدد الأسئلة (التصفيات+نصف النهائي)" value={String(settings.questionCount)} onValueChange={(v) => setSettings((s) => ({ ...s, questionCount: Number(v) }))} options={[6, 8, 12, 16, 22, 30].map((n) => ({ value: String(n), label: `${n} أسئلة` }))} />
                 <Select label="المؤقت (ثانية)" value={String(settings.timerSeconds)} onValueChange={(v) => setSettings((s) => ({ ...s, timerSeconds: Number(v) }))} options={[10, 15, 20, 30, 45].map((n) => ({ value: String(n), label: `${n}s` }))} />
                 <Select label="أقصى اللاعبين" value={String(settings.maxPlayers)} onValueChange={(v) => setSettings((s) => ({ ...s, maxPlayers: Number(v) }))} options={[4, 6, 8, 10, 12].map((n) => ({ value: String(n), label: `${n} لاعبين` }))} />
                 <div className="flex flex-col gap-2 sm:col-span-2">
@@ -99,6 +99,29 @@ export default function CreateRoomPage() {
                       <button key={c.id} type="button" onClick={() => toggleCategory(c.id)} className={cn("rounded-full border px-3 py-1.5 text-[13px]", settings.categories.includes(c.id) ? "border-[var(--primary)] bg-[var(--primary)]/10 font-bold" : "border-[var(--border)]")}>{c.ar}</button>
                     ))}
                   </div>
+                </div>
+                <div className="flex flex-col gap-2.5 sm:col-span-2">
+                  <span className="text-[13px] font-semibold text-[var(--muted)]">مدة المباراة</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(Object.keys(MATCH_PRESETS) as MatchLength[]).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => {
+                          const p = MATCH_PRESETS[m];
+                          setSettings((s) => ({ ...s, matchLength: m, questionCount: p.questions, timerSeconds: p.timer }));
+                        }}
+                        className={cn("rounded-2xl border p-3 text-center transition-all", settings.matchLength === m ? "border-[var(--accent)] bg-[var(--accent)]/10" : "border-[var(--border)] hover:bg-[var(--elevated)]")}
+                      >
+                        <b className="block text-[14px]">{MATCH_PRESETS[m].ar}</b>
+                        <small className="text-[var(--muted)]">{MATCH_PRESETS[m].minutes}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2 rounded-2xl border border-[var(--border)] p-3">
+                  <Switch checked={settings.tournament} onCheckedChange={(v) => setSettings((s) => ({ ...s, tournament: v }))} label="🏆 بطولة مراحل (تصفيات ← سرعة ⚡ ← نصف نهائي ← رهان ◆ ← نهائي ♛)" />
+                  <p className="text-[12px] text-[var(--muted)]">يتأهل أصحاب المراكز الأولى فقط. إيقافها = جولة كلاسيكية واحدة.</p>
                 </div>
                 <div className="flex flex-col gap-2.5 sm:col-span-2">
                   <span className="text-[13px] font-semibold text-[var(--muted)]">وسائل المساعدة</span>

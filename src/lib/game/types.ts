@@ -74,7 +74,70 @@ export interface RoomSettings {
   currency: string;
   lifelines: { fifty: boolean; crowd: boolean; extraTime: boolean };
   locked: boolean;
+  matchLength: MatchLength;
+  tournament: boolean;
 }
+
+export type MatchLength = "quick" | "classic" | "marathon";
+
+export type StageKind = "qualifier" | "speed" | "semifinal" | "wager" | "final";
+
+export interface StageSegment {
+  kind: StageKind;
+  start: number; // index into order
+  count: number;
+  timerSeconds: number;
+}
+
+export const MATCH_PRESETS: Record<
+  MatchLength,
+  { ar: string; en: string; questions: number; timer: number; minutes: string }
+> = {
+  quick: { ar: "سريعة", en: "Quick", questions: 6, timer: 15, minutes: "~8 دقائق" },
+  classic: { ar: "كلاسيكية", en: "Classic", questions: 12, timer: 20, minutes: "~15 دقيقة" },
+  marathon: { ar: "ماراثون", en: "Marathon", questions: 22, timer: 25, minutes: "~25–35 دقيقة" },
+};
+
+export const STAGE_META: Record<
+  StageKind,
+  { ar: string; en: string; icon: string; rules: string; rulesEn: string }
+> = {
+  qualifier: {
+    ar: "التصفيات",
+    en: "Qualifiers",
+    icon: "◈",
+    rules: "الجميع يلعب. اجمع أعلى رصيد لتتأهل.",
+    rulesEn: "Everyone plays. Top scorers advance.",
+  },
+  speed: {
+    ar: "جولة السرعة ⚡",
+    en: "Speed round",
+    icon: "⚡",
+    rules: "10 ثوانٍ فقط! الإجابة الصحيحة تصعد مستويين.",
+    rulesEn: "10 seconds only! Correct answers climb two levels.",
+  },
+  semifinal: {
+    ar: "نصف النهائي",
+    en: "Semifinal",
+    icon: "◐",
+    rules: "المتأهلون فقط يكملون. البقية يشاهدون كجمهور.",
+    rulesEn: "Qualified players only. Others watch as crowd.",
+  },
+  wager: {
+    ar: "جولة الرهان",
+    en: "Wager round",
+    icon: "◆",
+    rules: "راهن بـ25/50/100% من رصيدك قبل كل سؤال. صح = ربح الرهان، خطأ = خسارته.",
+    rulesEn: "Wager 25/50/100% of your prize. Win it or lose it.",
+  },
+  final: {
+    ar: "النهائي ♛",
+    en: "Final",
+    icon: "♛",
+    rules: "الأسئلة الحاسمة. الأعلى رصيداً يتوج مليونيراً.",
+    rulesEn: "Decisive questions. Top prize takes the crown.",
+  },
+};
 
 export interface AnswerSubmission {
   playerId: string;
@@ -128,10 +191,12 @@ export const CHECKPOINT_LEVELS = [4, 9]; // guaranteed-ish fallback levels (0-ba
 export const DEFAULT_SETTINGS: RoomSettings = {
   categories: ["mixed"],
   difficulty: "mixed",
-  questionCount: 10,
+  questionCount: 12,
   maxPlayers: 8,
   timerSeconds: 20,
   currency: "دج",
   lifelines: { fifty: true, crowd: true, extraTime: true },
   locked: false,
+  matchLength: "classic",
+  tournament: true,
 };

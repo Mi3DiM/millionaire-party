@@ -7,10 +7,12 @@ export function Timer({
   endsAt,
   startedAt,
   onExpire,
+  onSecond,
 }: {
   endsAt: number;
   startedAt: number;
   onExpire: () => void;
+  onSecond?: (left: number) => void;
 }) {
   const [now, setNow] = React.useState(() => Date.now());
   const total = Math.max(1, endsAt - startedAt);
@@ -19,9 +21,13 @@ export function Timer({
   const frac = leftMs / total;
 
   React.useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 200);
+    const t = setInterval(() => {
+      const nowMs = Date.now();
+      setNow(nowMs);
+      onSecond?.(Math.max(0, Math.ceil((endsAt - nowMs) / 1000)));
+    }, 200);
     return () => clearInterval(t);
-  }, []);
+  }, [endsAt, onSecond]);
 
   const fired = React.useRef(false);
   React.useEffect(() => {

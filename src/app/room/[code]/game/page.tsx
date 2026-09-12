@@ -13,10 +13,15 @@ import { PrizeLadder } from "@/components/game/PrizeLadder";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
-import { useRoom } from "@/lib/game/store";
-import { DEFAULT_PRIZE_LADDER } from "@/lib/game/types";
+import { StageBanner, Halftime, WagerDialog } from "@/components/game/StageFx";
+import { useRoom, currentStageKind } from "@/lib/game/store";
+import { rankPlayers } from "@/lib/game/engine";
+import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
+import { qualifiedIds } from "@/lib/game/engine";
 import { formatPrize } from "@/lib/utils";
 import { useI18n } from "@/i18n/provider";
+import { sfx, startMusic, stopMusic } from "@/lib/fx/audio";
+import { haptics } from "@/lib/fx/haptics";
 
 export default function GamePage() {
   const params = useParams<{ code: string }>();
@@ -27,25 +32,96 @@ export default function GamePage() {
   const [showRanks, setShowRanks] = React.useState(false);
 
   const q = s.order[s.currentIndex];
+  const kind = currentStageKind(s);
 
   React.useEffect(() => {
     if (s.status === "finished") router.push(`/room/${params.code}/results`);
     if (s.status === "lobby" || !q) router.push(`/room/${params.code}`);
   }, [s.status, q, router, params.code]);
 
+  // Background music lifecycle.
+  React.useEffect(() => {
+    startMusic();
+    return () => stopMusic();
+  }, []);
+
   // Keep a stable callback for Timer.
   const onExpire = React.useCallback(() => {
     useRoom.getState().tickTimeout();
   }, []);
 
-  if (!q) return null;
+  const onSecond = React.useCallback((left: number) => {
+    sfx.countdownTick(left);
+    if (left <= 5 && left > 0) {
+      // Haptic pulse handled sparingly: only at 5,3,1 to avoid buzz spam.
+      if (left === 5 || left === 3 || left === 1) haptics.critical();
+    }
+  }, []);
 
-  const isReveal = s.phase === "reveal";
-  const trueCorrect = isReveal ? s.reveal?.correct : undefined;
+  // Stage-change fanfare.
+  const prevKind = React.useRef(kind);
+  React.useEffect(() => {
+    if (prevKind.current !== kind) {
+      prevKind.current = kind;
+      sfx.stageHorn();
+      haptics.stage();
+    }
+  }, [kind]);
+
+  // Reveal feedback: sfx + haptics + rank-change chime.
   const me = s.players.find((p) => p.id === s.meId);
   const mySub = s.reveal?.submissions.find((x) => x.playerId === s.meId);
+  const isReveal = s.phase === "reveal";
   const myCorrect = isReveal && mySub ? mySub.choice === s.reveal!.correct : null;
-  const prizeLabel = formatPrize(DEFAULT_PRIZE_LADDER[Math.min(s.currentIndex + (me && me.level >= 0 ? 0 : 0), DEFAULT_PRIZE_LADDER.length - 1)] ?? 0, s.settings.currency);
+  const myRank = React.useMemo(() => {
+    const r = rankPlayers(s.players).findIndex((p) => p.id === s.meId);
+    return r >= 0 ? r + 1 : null;
+  }, [s.players, s.meId]);
+  const prevRank = React.useRef<number | null>(null);
+  const prevRevealQ = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (isReveal && q && prevRevealQ.current !== q.id) {
+      prevRevealQ.current = q.id;
+      if (mySub?.choice === null) {
+        sfx.wrong();
+        haptics.wrong();
+      } else if (myCorrect) {
+        if (kind === "final") sfx.prizeUp();
+        else sfx.correct();
+        haptics.correct();
+      } else {
+        sfx.wrong();
+        haptics.wrong();
+      }
+      if (prevRank.current !== null && myRank !== null && myRank < prevRank.current) {
+        setTimeout(() => sfx.rankUp(), 500);
+      }
+    }
+    if (isReveal && myRank !== null) prevRank.current = myRank;
+    if (!isReveal) prevRevealQ.current = null;
+  }, [isReveal, q, mySub, myCorrect, myRank, kind]);
+
+  // Lock feedback.
+  const prevLocked = React.useRef(s.myLocked);
+  React.useEffect(() => {
+    if (s.myLocked && !prevLocked.current) {
+      sfx.lock();
+      haptics.lock();
+    }
+    prevLocked.current = s.myLocked;
+  }, [s.myLocked]);
+
+  if (!q) return null;
+
+  const trueCorrect = isReveal ? s.reveal?.correct : undefined;
+  const prizeLabel = formatPrize(DEFAULT_PRIZE_LADDER[Math.min(s.currentIndex, DEFAULT_PRIZE_LADDER.length - 1)] ?? 0, s.settings.currency);
+  const meEliminated = !!me?.eliminated;
+  const myWager = s.meId ? s.wagers[s.meId] : undefined;
+  const needWager = kind === "wager" && !isReveal && !meEliminated && myWager === undefined;
+  const qualifiedPreview =
+    kind === "semifinal" || kind === "final"
+      ? qualifiedIds(rankPlayers(s.players.filter((p) => !p.eliminated || true)))
+      : s.players.filter((p) => !p.eliminated).map((p) => p.id);
 
   return (
     <div className="theme-show flex min-h-screen flex-col bg-[#0a0c16] text-[#f5f1e4]">
@@ -63,19 +139,35 @@ export default function GamePage() {
 
         {/* Center */}
         <main className="flex min-w-0 flex-col gap-4">
+          {s.settings.tournament && s.stages.length > 1 && (
+            <StageBanner kind={kind} index={s.currentIndex} total={s.order.length} />
+          )}
           <div className="flex items-center justify-between gap-3">
             {!isReveal ? (
-              <Timer key={q.id} endsAt={s.questionEndsAt} startedAt={s.questionStartedAt} onExpire={onExpire} />
+              <Timer key={q.id + String(s.questionStartedAt)} endsAt={s.questionEndsAt} startedAt={s.questionStartedAt} onExpire={onExpire} onSecond={onSecond} />
             ) : (
               <Badge variant={myCorrect ? "success" : "danger"} className="px-4 py-2 text-sm">
                 {mySub?.choice === null ? (locale === "ar" ? "انتهى الوقت" : "Time out") : myCorrect ? (locale === "ar" ? "إجابة صحيحة ✓" : "Correct ✓") : (locale === "ar" ? "إجابة خاطئة ✕" : "Wrong ✕")}
               </Badge>
             )}
-            <div className="flex gap-2 lg:hidden">
-              <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
-              <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
+            <div className="flex items-center gap-2">
+              {kind === "speed" && !isReveal && <Badge variant="gold">×2 ⚡</Badge>}
+              <div className="flex gap-2 lg:hidden">
+                <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
+                <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
+              </div>
             </div>
           </div>
+
+          {meEliminated && (
+            <p className="rounded-2xl border border-white/15 bg-white/5 p-3 text-center text-sm">
+              👀 أنت في الجمهور الآن — شاهد بقية {STAGE_META[kind].ar}!
+            </p>
+          )}
+
+          {kind === "wager" && !isReveal && !meEliminated && (
+            <WagerDialog prize={me?.prize ?? 0} currency={s.settings.currency} current={myWager} onPick={(pct) => { s.placeWager(pct); haptics.tap(); }} />
+          )}
 
           <AnimatePresence mode="wait">
             <motion.div key={q.id + s.phase} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
@@ -90,7 +182,12 @@ export default function GamePage() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="grid gap-2.5 md:grid-cols-2">
+          <motion.div
+            key={q.id + (isReveal ? (myCorrect ? "-win" : "-lose") : "")}
+            animate={isReveal && !myCorrect ? { x: [0, -10, 10, -6, 6, 0] } : { x: 0 }}
+            transition={{ duration: 0.4 }}
+            className="grid gap-2.5 md:grid-cols-2"
+          >
             {s.answerOrder.map((trueIdx, di) => {
               const hidden = s.removedOptions.includes(di);
               let state: "default" | "selected" | "correct" | "wrong" | "dimmed" = "default";
@@ -100,24 +197,22 @@ export default function GamePage() {
                 else if (mySub && mySub.choice === trueIdx) state = "wrong";
                 else state = "default";
               } else if (s.myChoice === di) state = "selected";
-              const votes = s.crowdVotes && isReveal === false ? undefined : undefined;
               const crowdPct = s.crowdVotes ? s.crowdVotes[trueIdx] : undefined;
-              void votes;
               return (
                 <AnswerOption
                   key={di}
                   displayIndex={di}
                   text={q.answers[trueIdx]}
                   state={state}
-                  disabled={isReveal || s.myLocked || hidden}
+                  disabled={isReveal || s.myLocked || hidden || meEliminated || needWager || s.awaitingStage}
                   votes={s.crowdVotes ? crowdPct : undefined}
                   onPick={() => s.submitAnswer(di)}
                 />
               );
             })}
-          </div>
+          </motion.div>
 
-          {!isReveal && !s.myLocked && (
+          {!isReveal && !s.myLocked && !meEliminated && !needWager && (
             <LifelineBar left={s.lifelinesLeft} enabled={s.settings.lifelines} onUse={(k) => s.useLifeline(k)} />
           )}
           {!isReveal && s.myLocked && (
@@ -143,9 +238,6 @@ export default function GamePage() {
                   <p className="text-[13px] text-white/60">المضيف ينقل إلى السؤال التالي…</p>
                 )}
               </div>
-              {!s.isHost && (
-                <AutoAdvanceWatcher />
-              )}
             </div>
           )}
         </main>
@@ -156,6 +248,19 @@ export default function GamePage() {
           <Leaderboard players={s.players} currency={s.settings.currency} meId={s.meId} />
         </aside>
       </div>
+
+      {/* Halftime overlay */}
+      {s.awaitingStage && (
+        <Halftime
+          kind={kind}
+          players={s.players}
+          currency={s.settings.currency}
+          meId={s.meId}
+          isHost={s.isHost}
+          qualifiedPreview={qualifiedPreview}
+          onContinue={() => { s.continueStage(); }}
+        />
+      )}
 
       {/* Mobile drawers */}
       <Dialog open={showLadder} onOpenChange={setShowLadder}>
@@ -173,20 +278,4 @@ export default function GamePage() {
       <Footer />
     </div>
   );
-}
-
-function AutoAdvanceWatcher() {
-  // Guests follow host: poll phase changes via store subscription is automatic (same store in local mode).
-  // In P2P mode the host snapshot drives this; local fallback: auto-advance after 12s for demo fluidity.
-  React.useEffect(() => {
-    const t = setTimeout(() => {
-      const st = useRoom.getState();
-      if (!st.isHost && st.phase === "reveal") {
-        // Non-hosts in local prototype: follow host automatically after a pause.
-        // (Host click advances instantly; this is only a fallback.)
-      }
-    }, 12000);
-    return () => clearTimeout(t);
-  }, []);
-  return null;
 }

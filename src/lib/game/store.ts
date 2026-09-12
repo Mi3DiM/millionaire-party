@@ -9,8 +9,19 @@ import {
   type QuestionBank,
   type RoomSettings,
   type RoomStatus,
+  type StageKind,
+  type StageSegment,
 } from "@/lib/game/types";
-import { buildQuestionOrder, crowdDistribution, rankPlayers, scoreAfterAnswer } from "@/lib/game/engine";
+import {
+  buildQuestionOrder,
+  buildStages,
+  crowdDistribution,
+  qualifiedIds,
+  rankPlayers,
+  scoreAfterAnswer,
+  stageAt,
+  stageTotal,
+} from "@/lib/game/engine";
 import { uid } from "@/lib/utils";
 
 export type ConnectionMode = "local" | "p2p";
@@ -38,6 +49,9 @@ interface RoomState {
   lifelinesLeft: Record<LifelineKind, number>;
   mode: ConnectionMode;
   connectionNote: string | null;
+  stages: StageSegment[];
+  awaitingStage: boolean;
+  wagers: Record<string, number>; // playerId -> pct for current wager question
 
   // actions
   createRoom: (opts: { name: string; avatarId: string; settings: RoomSettings; bank: QuestionBank; mode: ConnectionMode }) => string;
@@ -53,9 +67,20 @@ interface RoomState {
   tickTimeout: () => void;
   revealNow: () => void;
   nextQuestion: () => void;
+  continueStage: () => void;
+  placeWager: (pct: 25 | 50 | 100) => void;
   useLifeline: (kind: LifelineKind) => void;
   resetToLobby: () => void;
   leaveRoom: () => void;
+}
+
+export function currentStageKind(s: Pick<RoomState, "stages" | "currentIndex">): StageKind {
+  if (s.stages.length === 0) return "qualifier";
+  return s.stages[stageAt(s.stages, s.currentIndex)].kind;
+}
+
+export function activePlayers(players: Player[]): Player[] {
+  return players.filter((p) => !p.eliminated);
 }
 
 const BOT_NAMES = ["سارة", "ياسين", "أمينة", "كريم", "ليلى", "ريان", "مريم", "أنس"];
@@ -92,6 +117,9 @@ export const useRoom = create<RoomState>((set, get) => ({
   lifelinesLeft: { fifty: 1, crowd: 1, extra: 1 },
   mode: "local",
   connectionNote: null,
+  stages: [],
+  awaitingStage: false,
+  wagers: {},
 
   createRoom: ({ name, avatarId, settings, bank, mode }) => {
     const code = genCode();
@@ -187,12 +215,20 @@ export const useRoom = create<RoomState>((set, get) => ({
       const filtered = pool.filter((q) => settings.categories.includes(q.category));
       if (filtered.length >= 3) pool = filtered;
     }
-    const order = buildQuestionOrder(pool, Math.min(settings.questionCount, pool.length), settings.difficulty);
+    const stages = buildStages(settings.questionCount, settings.matchLength, settings.tournament, settings.timerSeconds);
+    const total = Math.min(stageTotal(stages), pool.length);
+    const order = buildQuestionOrder(pool, total, settings.difficulty);
+    // Trim trailing segments if bank is smaller than planned.
+    while (stages.length > 1 && stages[stages.length - 1].start >= order.length) stages.pop();
+    const firstTimer = stages[0]?.timerSeconds ?? settings.timerSeconds;
     const now = Date.now();
-    const ends = now + settings.timerSeconds * 1000;
+    const ends = now + firstTimer * 1000;
     set({
       status: "playing",
       order,
+      stages,
+      awaitingStage: false,
+      wagers: {},
       currentIndex: 0,
       phase: "question",
       questionStartedAt: now,
@@ -205,14 +241,18 @@ export const useRoom = create<RoomState>((set, get) => ({
       removedOptions: [],
       crowdVotes: null,
       lifelinesLeft: { fifty: 1, crowd: 1, extra: 1 },
-      players: players.map((p) => ({ ...p, status: "thinking", prize: 0, level: -1, correctCount: 0, streak: 0, bestStreak: 0, totalResponseMs: 0 })),
+      players: players.map((p) => ({ ...p, status: "thinking", prize: 0, level: -1, correctCount: 0, streak: 0, bestStreak: 0, totalResponseMs: 0, eliminated: false })),
     });
     scheduleBots();
   },
 
   submitAnswer: (displayIndex) => {
     const s = get();
-    if (s.status !== "playing" || s.phase !== "question" || s.myLocked) return;
+    if (s.status !== "playing" || s.phase !== "question" || s.myLocked || s.awaitingStage) return;
+    const me = s.players.find((p) => p.id === s.meId);
+    if (!me || me.eliminated) return;
+    const kind = currentStageKind(s);
+    if (kind === "wager" && s.wagers[s.meId!] === undefined) return; // must place wager first
     const q = s.order[s.currentIndex];
     if (!q) return;
     const trueChoice = s.answerOrder[displayIndex];
@@ -235,9 +275,10 @@ export const useRoom = create<RoomState>((set, get) => ({
 
   tickTimeout: () => {
     const s = get();
-    if (s.status !== "playing" || s.phase !== "question") return;
+    if (s.status !== "playing" || s.phase !== "question" || s.awaitingStage) return;
     // Record timeout for me if not answered.
-    if (!s.myLocked && s.meId) {
+    const me = s.players.find((p) => p.id === s.meId);
+    if (!s.myLocked && s.meId && me && !me.eliminated) {
       const q = s.order[s.currentIndex];
       if (q) {
         const sub: AnswerSubmission = {
@@ -258,9 +299,11 @@ export const useRoom = create<RoomState>((set, get) => ({
     if (s.status !== "playing" || s.phase !== "question") return;
     const q = s.order[s.currentIndex];
     if (!q) return;
-    // Ensure every player has a submission (timeout = null).
+    const kind = currentStageKind(s);
+    const active = activePlayers(s.players);
+    // Ensure every active player has a submission (timeout = null).
     const subs = new Map(s.submissions.map((x) => [x.playerId, x]));
-    for (const p of s.players) {
+    for (const p of active) {
       if (!subs.has(p.id)) {
         subs.set(p.id, {
           playerId: p.id,
@@ -273,8 +316,12 @@ export const useRoom = create<RoomState>((set, get) => ({
     }
     const all = [...subs.values()];
     const players = s.players.map((p) => {
+      if (p.eliminated) return p;
       const sub = subs.get(p.id)!;
-      const patch = scoreAfterAnswer(p, sub, q.correctAnswer, DEFAULT_PRIZE_LADDER);
+      const patch = scoreAfterAnswer(p, sub, q.correctAnswer, DEFAULT_PRIZE_LADDER, {
+        double: kind === "speed",
+        wagerPct: kind === "wager" ? (s.wagers[p.id] ?? 0) : 0,
+      });
       return { ...p, ...patch };
     });
     set({
@@ -292,13 +339,35 @@ export const useRoom = create<RoomState>((set, get) => ({
       set({ status: "finished" });
       return;
     }
+    const nextIdx = s.currentIndex + 1;
+    const stageChanged =
+      s.stages.length > 0 && stageAt(s.stages, nextIdx) !== stageAt(s.stages, s.currentIndex);
+    if (stageChanged) {
+      // Halftime: hold on the next question until host continues.
+      set({
+        currentIndex: nextIdx,
+        phase: "question",
+        status: "playing",
+        awaitingStage: true,
+        myChoice: null,
+        myLocked: false,
+        submissions: [],
+        reveal: null,
+        removedOptions: [],
+        crowdVotes: null,
+        wagers: {},
+        players: s.players.map((p) => ({ ...p, status: p.eliminated ? "eliminated" as const : "thinking" as const })),
+      });
+      return;
+    }
     const now = Date.now();
+    const seg = s.stages[stageAt(s.stages, nextIdx)];
     set({
-      currentIndex: s.currentIndex + 1,
+      currentIndex: nextIdx,
       phase: "question",
       status: "playing",
       questionStartedAt: now,
-      questionEndsAt: now + s.settings.timerSeconds * 1000,
+      questionEndsAt: now + (seg?.timerSeconds ?? s.settings.timerSeconds) * 1000,
       answerOrder: [0, 1, 2, 3].sort(() => Math.random() - 0.5),
       myChoice: null,
       myLocked: false,
@@ -306,9 +375,53 @@ export const useRoom = create<RoomState>((set, get) => ({
       reveal: null,
       removedOptions: [],
       crowdVotes: null,
-      players: s.players.map((p) => ({ ...p, status: "thinking" as const })),
+      wagers: {},
+      players: s.players.map((p) => ({ ...p, status: p.eliminated ? "eliminated" as const : "thinking" as const })),
     });
     scheduleBots();
+  },
+
+  continueStage: () => {
+    const s = get();
+    if (!get().isHost || !s.awaitingStage) return;
+    const kind = currentStageKind(s);
+    let players = s.players;
+    // Semifinal/final entry: top half qualifies, rest become spectators.
+    if (kind === "semifinal" || kind === "final") {
+      const q = qualifiedIds(rankPlayers(activePlayers(players)));
+      const setQ = new Set(q);
+      players = players.map((p) =>
+        setQ.has(p.id) ? { ...p, status: "thinking" as const } : { ...p, eliminated: true, status: "eliminated" as const }
+      );
+    }
+    // Bots place wagers.
+    const wagers: Record<string, number> = {};
+    if (kind === "wager") {
+      for (const p of activePlayers(players)) {
+        if (p.isBot) wagers[p.id] = [25, 50, 100][Math.floor(Math.random() * 3)];
+      }
+    }
+    const now = Date.now();
+    const seg = s.stages[stageAt(s.stages, s.currentIndex)];
+    set({
+      awaitingStage: false,
+      players,
+      wagers,
+      phase: "question",
+      status: "playing",
+      questionStartedAt: now,
+      questionEndsAt: now + (seg?.timerSeconds ?? s.settings.timerSeconds) * 1000,
+      answerOrder: [0, 1, 2, 3].sort(() => Math.random() - 0.5),
+    });
+    scheduleBots();
+  },
+
+  placeWager: (pct) => {
+    const s = get();
+    if (s.phase !== "question" || currentStageKind(s) !== "wager" || s.myLocked) return;
+    const me = s.players.find((p) => p.id === s.meId);
+    if (!me || me.eliminated) return;
+    set({ wagers: { ...s.wagers, [s.meId!]: pct } });
   },
 
   useLifeline: (kind) => {
@@ -338,13 +451,16 @@ export const useRoom = create<RoomState>((set, get) => ({
     set({
       status: "lobby",
       order: [],
+      stages: [],
+      awaitingStage: false,
+      wagers: {},
       currentIndex: 0,
       phase: "question",
       myChoice: null,
       myLocked: false,
       submissions: [],
       reveal: null,
-      players: s.players.map((p) => ({ ...p, ready: p.isHost ? true : false, status: "idle" as const, prize: 0, level: -1 })),
+      players: s.players.map((p) => ({ ...p, ready: p.isHost ? true : false, status: "idle" as const, prize: 0, level: -1, eliminated: false })),
     });
   },
 
@@ -405,10 +521,13 @@ function scheduleBots() {
   botTimers = [];
   const s = useRoom.getState();
   const q = s.order[s.currentIndex];
-  if (!q) return;
+  if (!q || s.awaitingStage) return;
+  const kind = currentStageKind(s);
   for (const p of s.players) {
-    if (!p.isBot) continue;
-    const { choice, delayMs } = botAnswer(q);
+    if (!p.isBot || p.eliminated) continue;
+    // Bots in wager stage answer only if they "placed" a wager (set at stage entry).
+    if (kind === "wager" && s.wagers[p.id] === undefined) continue;
+    const { choice, delayMs } = botAnswer(q, kind === "speed" ? 0.5 : 0.62);
     const capped = Math.min(delayMs, Math.max(1000, s.questionEndsAt - Date.now() - 500));
     botTimers.push(
       setTimeout(() => {
@@ -435,10 +554,11 @@ function scheduleBots() {
 
 function maybeAutoReveal() {
   const s = useRoom.getState();
-  if (s.phase !== "question") return;
+  if (s.phase !== "question" || s.awaitingStage) return;
   const answeredIds = new Set(s.submissions.map((x) => x.playerId));
-  // me + bots: reveal when everyone answered
-  if (s.players.length > 0 && s.players.every((p) => answeredIds.has(p.id))) {
+  const active = activePlayers(s.players);
+  // Reveal when every active player answered.
+  if (active.length > 0 && active.every((p) => answeredIds.has(p.id))) {
     setTimeout(() => useRoom.getState().revealNow(), 600);
   }
 }

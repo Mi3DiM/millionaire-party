@@ -1,13 +1,17 @@
 "use client";
 
+import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Header, Footer, PageContainer } from "@/components/app/shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
+import { Confetti, CountUp } from "@/components/game/StageFx";
 import { useRoom, selectRankedPlayers } from "@/lib/game/store";
 import { formatPrize } from "@/lib/utils";
+import { sfx } from "@/lib/fx/audio";
+import { haptics } from "@/lib/fx/haptics";
 
 export default function ResultsPage() {
   const params = useParams<{ code: string }>();
@@ -15,6 +19,13 @@ export default function ResultsPage() {
   const s = useRoom();
   const ranked = selectRankedPlayers(s.players);
   const winner = ranked[0];
+  const meWon = !!winner && winner.id === s.meId;
+
+  React.useEffect(() => {
+    sfx.victory();
+    if (meWon) haptics.victory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (s.players.length === 0) {
     return (
@@ -27,6 +38,7 @@ export default function ResultsPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <Confetti fire />
       <PageContainer>
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
           {winner && (
@@ -40,7 +52,7 @@ export default function ResultsPage() {
                     <b className="text-2xl">{winner.name}</b>
                   </div>
                   <p className="prize-num text-4xl font-black text-[var(--accent)] tabular-nums">
-                    {formatPrize(winner.prize, s.settings.currency)}
+                    <CountUp value={winner.prize} currency={s.settings.currency} />
                   </p>
                 </CardContent>
               </Card>
