@@ -103,7 +103,10 @@ export interface HostSnapshot {
   settings: RoomSettings;
   bankName: string | null;
   players: PublicPlayer[];
-  order: PublicQuestion[];
+  /** Current question only (keeps messages ~1KB instead of ~20KB for a full order). */
+  question: PublicQuestion | null;
+  /** Full authoritative length so guests can size progress/ladder correctly. */
+  questionTotal: number;
   currentIndex: number;
   phase: "question" | "reveal";
   questionStartedAt: number;
@@ -113,4 +116,58 @@ export interface HostSnapshot {
   awaitingStage: boolean;
   wagers: Record<string, number>;
   reveal: { correct: number; submissions: AnswerSubmission[] } | null;
+}
+
+/** Rolling transport diagnostics (module-level; rendered by RoomSync's collapsed panel). */
+export const netStats: {
+  sentSnap: number;
+  sentAt: number | null;
+  sentBytes: number;
+  recvSnap: number;
+  recvAt: number | null;
+  recvBytes: number;
+  guestMsgs: number;
+  lastError: string | null;
+} = {
+  sentSnap: 0,
+  sentAt: null,
+  sentBytes: 0,
+  recvSnap: 0,
+  recvAt: null,
+  recvBytes: 0,
+  guestMsgs: 0,
+  lastError: null,
+};
+
+export function noteSent(bytes: number) {
+  netStats.sentSnap += 1;
+  netStats.sentAt = Date.now();
+  netStats.sentBytes = bytes;
+}
+
+export function noteRecv(bytes: number) {
+  netStats.recvSnap += 1;
+  netStats.recvAt = Date.now();
+  netStats.recvBytes = bytes;
+}
+
+export function noteError(err: unknown) {
+  try {
+    netStats.lastError = err instanceof Error ? err.message : String(err).slice(0, 160);
+  } catch {
+    netStats.lastError = "send failed";
+  }
+}
+
+export function snapshotBytes(snap: HostSnapshot): number {
+  try {
+    const s = JSON.stringify(snap);
+    try {
+      return new Blob([s]).size;
+    } catch {
+      return s.length;
+    }
+  } catch {
+    return -1;
+  }
 }

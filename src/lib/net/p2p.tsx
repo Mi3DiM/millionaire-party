@@ -8,6 +8,7 @@
 import * as React from "react";
 import { joinRoom as trysteroJoin, selfId, type Room } from "trystero";
 import type { GuestMsg, HostSnapshot } from "@/lib/net/protocol";
+import { noteError, noteSent, snapshotBytes } from "@/lib/net/protocol";
 
 const APP_ID = "millionaire-party-v1";
 const SNAP_NS = "mp-snap-v1";
@@ -104,20 +105,28 @@ export function useP2P(code: string | null, enabled: boolean, events: P2PEvents)
 
   const broadcastSnapshot = React.useCallback((snap: HostSnapshot) => {
     try {
-      void snapRef.current?.send(snap)?.catch(() => {});
-    } catch {}
+      noteSent(snapshotBytes(snap));
+      void snapRef.current?.send(snap)?.catch((e) => noteError(e));
+    } catch (e) {
+      noteError(e);
+    }
   }, []);
 
   const sendSnapshotTo = React.useCallback((snap: HostSnapshot, peerId: string) => {
     try {
-      void snapRef.current?.send(snap, { target: peerId })?.catch(() => {});
-    } catch {}
+      noteSent(snapshotBytes(snap));
+      void snapRef.current?.send(snap, { target: peerId })?.catch((e) => noteError(e));
+    } catch (e) {
+      noteError(e);
+    }
   }, []);
 
   const sendToHost = React.useCallback((msg: GuestMsg) => {
     try {
-      void evtRef.current?.send(msg)?.catch(() => {});
-    } catch {}
+      void evtRef.current?.send(msg)?.catch((e) => noteError(e));
+    } catch (e) {
+      noteError(e);
+    }
   }, []);
 
   return { peers, connected, myPeerId: selfId, broadcastSnapshot, sendSnapshotTo, sendToHost };
@@ -126,7 +135,13 @@ export function useP2P(code: string | null, enabled: boolean, events: P2PEvents)
 function isSnapshot(v: unknown): v is HostSnapshot {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
-  return o.v === 1 && typeof o.code === "string" && Array.isArray(o.players) && Array.isArray(o.order);
+  return (
+    o.v === 1 &&
+    typeof o.code === "string" &&
+    Array.isArray(o.players) &&
+    typeof o.questionTotal === "number" &&
+    (o.question === null || typeof o.question === "object")
+  );
 }
 
 function isGuestMsg(v: unknown): v is GuestMsg {

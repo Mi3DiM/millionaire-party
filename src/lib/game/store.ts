@@ -102,6 +102,7 @@ interface RoomState {
   setP2p: (patch: Partial<Pick<RoomState, "p2pConnected" | "p2pPeers" | "p2pLastHostAt" | "connectionNote">>) => void;
   registerRemotePlayer: (opts: { playerId: string; name: string; avatarId: string }) => void;
   setRemoteReady: (playerId: string, ready: boolean) => void;
+  setRemoteConnection: (playerId: string, connection: Player["connection"]) => void;
   removeRemotePlayer: (playerId: string) => void;
   submitRemoteAnswer: (opts: { playerId: string; questionId: string; choice: number | null }) => void;
   placeRemoteWager: (playerId: string, pct: 25 | 50 | 100) => void;
@@ -601,8 +602,21 @@ export const useRoom = create<RoomState>((set, get) => ({
 
   registerRemotePlayer: ({ playerId, name, avatarId }) => {
     const s = get();
-    if (!s.isHost || s.status !== "lobby") return;
-    if (s.players.some((p) => p.id === playerId)) return;
+    if (!s.isHost) return;
+    const known = s.players.find((p) => p.id === playerId);
+    if (known) {
+      // Re-link (e.g. guest rejoin after drop): refresh identity, mark online.
+      if (known.name !== name || known.avatarId !== avatarId || known.connection !== "connected") {
+        set({
+          players: get().players.map((p) =>
+            p.id === playerId ? { ...p, name, avatarId, connection: "connected" as const } : p
+          ),
+        });
+      }
+      return;
+    }
+    // Brand-new players only before the game starts (sequence lock).
+    if (s.status !== "lobby") return;
     if (s.players.length >= s.settings.maxPlayers) return;
     if (s.settings.locked) return;
     const remote: Player = {
@@ -616,6 +630,15 @@ export const useRoom = create<RoomState>((set, get) => ({
   setRemoteReady: (playerId, ready) => {
     if (!get().isHost) return;
     set({ players: get().players.map((p) => (p.id === playerId && !p.isHost ? { ...p, ready } : p)) });
+  },
+
+  setRemoteConnection: (playerId, connection) => {
+    if (!get().isHost) return;
+    set({
+      players: get().players.map((p) =>
+        p.id === playerId && !p.isHost ? { ...p, connection } : p
+      ),
+    });
   },
 
   removeRemotePlayer: (playerId) => {
@@ -665,14 +688,20 @@ export const useRoom = create<RoomState>((set, get) => ({
     const newQuestion =
       snap.currentIndex !== s.currentIndex ||
       (s.phase === "reveal" && snap.phase === "question");
-    const order = snap.order.map((q) => ({
-      id: q.id,
-      question: q.question,
-      answers: q.answers,
-      correctAnswer: -1 as number,
-      category: q.category,
-      difficulty: q.difficulty as Question["difficulty"],
-    }));
+    // Accumulate sparse order: size to the authoritative total, patch the current question.
+    const order: Question[] = s.order.length ? [...s.order] : [];
+    while (order.length < snap.questionTotal) order.push(pendingQuestion(order.length));
+    if (snap.question && snap.currentIndex < order.length) {
+      const q = snap.question;
+      order[snap.currentIndex] = {
+        id: q.id,
+        question: q.question,
+        answers: q.answers,
+        correctAnswer: -1 as number,
+        category: q.category,
+        difficulty: q.difficulty as Question["difficulty"],
+      };
+    }
     const players = snap.players.map(fromPublicPlayer);
     const meNow = players.find((p) => p.id === s.meId);
     set({
@@ -707,6 +736,7 @@ export const useRoom = create<RoomState>((set, get) => ({
     const s = get();
     if (!s.isHost || !s.code) return null;
     const answerOrder = [...s.answerOrder] as [number, number, number, number];
+    const q = s.order[s.currentIndex];
     return {
       v: 1 as const,
       code: s.code,
@@ -714,13 +744,17 @@ export const useRoom = create<RoomState>((set, get) => ({
       settings: s.settings,
       bankName: s.bank?.name ?? null,
       players: s.players.map(toPublicPlayer),
-      order: s.order.map((q) => ({
-        id: q.id,
-        question: q.question,
-        answers: q.answers,
-        category: typeof q.category === "string" ? q.category : "mixed",
-        difficulty: q.difficulty,
-      })),
+      // Slim: current question only (never correctAnswer/explanation pre-reveal).
+      question: q
+        ? {
+            id: q.id,
+            question: q.question,
+            answers: q.answers,
+            category: typeof q.category === "string" ? q.category : "mixed",
+            difficulty: q.difficulty,
+          }
+        : null,
+      questionTotal: s.order.length,
       currentIndex: s.currentIndex,
       phase: s.phase,
       questionStartedAt: s.questionStartedAt,
@@ -733,6 +767,18 @@ export const useRoom = create<RoomState>((set, get) => ({
     };
   },
 }));
+
+/** Placeholder until the host's snapshot delivers the real question at that index. */
+function pendingQuestion(i: number): Question {
+  return {
+    id: `pending-${i}`,
+    question: "…",
+    answers: ["…", "…", "…", "…"],
+    correctAnswer: -1,
+    category: "mixed",
+    difficulty: "medium",
+  };
+}
 
 function freshPlayer(name: string, avatarId: string, isHost: boolean): Player {
   return {
