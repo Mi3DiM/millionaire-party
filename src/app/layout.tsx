@@ -10,17 +10,43 @@ const plexArabic = IBM_Plex_Sans_Arabic({
   display: "swap",
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "المليونير — تحدَّ أصدقاءك واصعد سلّم الجوائز",
     template: "%s | المليونير",
   },
   description:
     "لعبة مسابقات جماعية لحظية: أنشئ غرفة، ادعُ أصدقاءك، أجيبوا على نفس الأسئلة تحت نفس المؤقت، وتسلّقوا سلّم الجوائز.",
+  applicationName: "المليونير",
   manifest: "/manifest.webmanifest",
-  icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/avatars/avatar-01.png" }],
+  // Icons + social images come from file conventions:
+  // icon.svg, favicon.ico, apple-icon.png, opengraph-image.png, twitter-image.png
+  openGraph: {
+    type: "website",
+    locale: "ar_DZ",
+    siteName: "المليونير",
+    title: "المليونير — تحدَّ أصدقاءك واصعد سلّم الجوائز",
+    description:
+      "غرفة واحدة. نفس الأسئلة. نفس المؤقت. أنشئ غرفة، شارك الرمز، وتسلّق سلّم الجوائز قبل الجميع.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "المليونير — تحدَّ أصدقاءك واصعد سلّم الجوائز",
+    description:
+      "غرفة واحدة. نفس الأسئلة. نفس المؤقت. أنشئ غرفة، شارك الرمز، وتسلّق سلّم الجوائز قبل الجميع.",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "المليونير",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
