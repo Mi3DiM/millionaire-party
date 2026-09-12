@@ -10,11 +10,14 @@ export function PrizeLadder({
   currentLevel,
   currency,
   compact,
+  markIndex,
 }: {
   ladder: number[];
   currentLevel: number;
   currency: string;
   compact?: boolean;
+  /** Current question index: shown as a locator dot (distinct from my level). */
+  markIndex?: number;
 }) {
   const items = ladder.map((v, i) => ({ v, i })).reverse();
   return (
@@ -38,6 +41,9 @@ export function PrizeLadder({
               <span className={cn("text-[11px]", state === "current" ? "opacity-70" : "opacity-50")}>
                 {String(i + 1).padStart(2, "0")}
               </span>
+              {markIndex === i && state !== "current" && (
+                <span aria-label="السؤال الحالي" title="السؤال الحالي" className="inline-block size-2 animate-pulse rounded-full bg-[var(--primary)]" />
+              )}
               {checkpoint && <GameIcon name="shield" size={13} className={state === "current" ? "text-[#1a1405]" : "text-[var(--accent-ink)]"} />}
             </span>
             <span>{formatPrize(v, currency)}</span>

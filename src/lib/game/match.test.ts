@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   buildStages,
+  crossedCheckpoint,
+  leaderGap,
   qualifiedIds,
   rankPlayers,
   scoreAfterAnswer,
@@ -54,13 +56,27 @@ describe("tournament stages", () => {
     expect(patch.level).toBe(3);
   });
 
-  it("wager adds on win and subtracts on loss", () => {
-    const pl = { ...p("a", 8000), level: 7, prize: 8000 };
+  it("wager adds on win and subtracts on loss", () => {    const pl = { ...p("a", 8000), level: 7, prize: 8000 };
     const win = scoreAfterAnswer(pl, { playerId: "a", questionId: "q", choice: 1, at: 0, responseMs: 800 }, 1, undefined, { wagerPct: 50 });
     expect(win.prize).toBeGreaterThan(8000);
     const lose = scoreAfterAnswer(pl, { playerId: "a", questionId: "q", choice: 0, at: 0, responseMs: 800 }, 1, undefined, { wagerPct: 50 });
     expect(lose.prize).toBe(4000);
     const ruin = scoreAfterAnswer(pl, { playerId: "a", questionId: "q", choice: 0, at: 0, responseMs: 800 }, 1, undefined, { wagerPct: 100 });
     expect(ruin.prize).toBe(0);
+  });
+
+  it("computes rank + leader gap for the HUD", () => {
+    const players = [p("a", 5000, 5), p("b", 3000, 3), p("c", 1000, 2)];
+    expect(leaderGap(players, "b")).toEqual({ rank: 2, gap: 2000, leaderPrize: 5000 });
+    expect(leaderGap(players, "a")).toEqual({ rank: 1, gap: 0, leaderPrize: 5000 });
+    expect(leaderGap(players, "ghost").rank).toBe(3);
+  });
+
+  it("detects checkpoint crossing (checkpoints at 4 and 9)", () => {
+    expect(crossedCheckpoint(3, 4)).toBe(true);
+    expect(crossedCheckpoint(2, 4)).toBe(true);
+    expect(crossedCheckpoint(4, 5)).toBe(false);
+    expect(crossedCheckpoint(8, 9)).toBe(true);
+    expect(crossedCheckpoint(-1, 0)).toBe(false);
   });
 });

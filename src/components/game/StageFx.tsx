@@ -173,21 +173,21 @@ export function Confetti({ fire }: { fire: boolean }) {
   return <canvas ref={ref} className="pointer-events-none fixed inset-0 z-[90]" aria-hidden />;
 }
 
-/** Animated prize count-up. */
-export function CountUp({ value, currency }: { value: number; currency: string }) {
-  const [shown, setShown] = React.useState(0);
+/** Animated prize count-up. Tweens from `from` (default 0) to `value`. */
+export function CountUp({ value, currency, from = 0 }: { value: number; currency: string; from?: number }) {
+  const [shown, setShown] = React.useState(from);
   React.useEffect(() => {
     let raf = 0;
-    const from = 0;
+    const start = from;
     const t0 = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / 1400);
-      setShown(Math.round(from + (value - from) * (1 - Math.pow(1 - t, 3))));
+      setShown(Math.round(start + (value - start) * (1 - Math.pow(1 - t, 3))));
       if (t < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value]);
+  }, [value, from]);
   return <span className="prize-num tabular-nums">{formatPrize(shown, currency)}</span>;
 }
 

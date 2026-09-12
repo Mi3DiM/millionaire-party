@@ -154,6 +154,21 @@ export function qualifiedIds(ranked: Player[]): string[] {
   return ranked.slice(0, n).map((p) => p.id);
 }
 
+/** Gap between me and the leader (0 when I lead or alone). Pure helper for the HUD. */
+export function leaderGap(players: Player[], meId: string | null): { rank: number; gap: number; leaderPrize: number } {
+  const ranked = rankPlayers(players);
+  const idx = ranked.findIndex((p) => p.id === meId);
+  const rank = idx >= 0 ? idx + 1 : ranked.length;
+  const leaderPrize = ranked[0]?.prize ?? 0;
+  const mine = ranked[idx]?.prize ?? 0;
+  return { rank, gap: Math.max(0, leaderPrize - mine), leaderPrize };
+}
+
+/** True when climbing from fromLevel to toLevel crosses a checkpoint. */
+export function crossedCheckpoint(fromLevel: number, toLevel: number): boolean {
+  return CHECKPOINT_LEVELS.some((c) => fromLevel < c && toLevel >= c);
+}
+
 export function rankPlayers(players: Player[]): Player[] {
   return [...players].sort((a, b) => {
     if (b.prize !== a.prize) return b.prize - a.prize;

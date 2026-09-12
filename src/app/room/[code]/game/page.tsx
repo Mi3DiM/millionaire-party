@@ -15,9 +15,11 @@ import { Leaderboard } from "@/components/game/Leaderboard";
 import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
 import { StageBanner, Halftime, WagerDialog, RevealVeil, FlyingGain } from "@/components/game/StageFx";
+import { BalanceHud } from "@/components/game/BalanceHud";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
 import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
+import { crossedCheckpoint, leaderGap } from "@/lib/game/engine";
 import { qualifiedIds } from "@/lib/game/engine";
 import { formatPrize } from "@/lib/utils";
 import { useI18n } from "@/i18n/provider";
@@ -89,6 +91,15 @@ export default function GamePage() {
     setVeilDoneFor(qid);
   }, [qid]);
   const gain = me && veilLifted ? Math.max(0, me.prize - s.myPrizeAtStart) : 0;
+  const hud = leaderGap(s.players, s.meId);
+  const wentUp =
+    me && isReveal && veilLifted
+      ? me.prize > s.myPrizeAtStart
+        ? true
+        : me.prize < s.myPrizeAtStart
+          ? false
+          : null
+      : null;
   React.useEffect(() => {
     // Sounds land with the reveal (after the 3-2-1 veil lifts), not behind it.
     if (isReveal && veilLifted && qid && prevRevealQ.current !== qid) {
@@ -97,7 +108,9 @@ export default function GamePage() {
         sfx.wrong();
         haptics.wrong();
       } else if (myCorrect) {
-        if (kind === "final") sfx.prizeUp();
+        // Checkpoint crossing gets the big fanfare; plain correct otherwise.
+        if (me && crossedCheckpoint(s.myLevelAtStart, me.level)) sfx.prizeUp();
+        else if (kind === "final") sfx.prizeUp();
         else sfx.correct();
         haptics.correct();
         const streak = (me?.streak ?? 0) + 1;
@@ -112,7 +125,7 @@ export default function GamePage() {
     }
     if (isReveal && myRank !== null) prevRank.current = myRank;
     if (!isReveal) prevRevealQ.current = null;
-  }, [isReveal, veilLifted, qid, mySub, myCorrect, myRank, kind, me?.streak]);
+  }, [isReveal, veilLifted, qid, mySub, myCorrect, myRank, kind, me, s.myLevelAtStart]);
 
   // Lock feedback.
   const prevLocked = React.useRef(s.myLocked);
@@ -146,13 +159,24 @@ export default function GamePage() {
           <Card className="border-white/10 bg-white/5">
             <CardContent className="p-4">
               <b className="mb-2 block text-sm">سلّم الجوائز</b>
-              <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={s.currentIndex} currency={s.settings.currency} />
+              <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} />
             </CardContent>
           </Card>
         </aside>
 
         {/* Center */}
         <main className="flex min-w-0 flex-col gap-4">
+          <BalanceHud
+            prize={me?.prize ?? 0}
+            fromPrize={s.myPrizeAtStart}
+            currency={s.settings.currency}
+            rank={hud.rank}
+            totalPlayers={s.players.length}
+            gap={hud.gap}
+            level={me?.level ?? -1}
+            wagerPct={kind === "wager" ? myWager : undefined}
+            wentUp={wentUp}
+          />
           {s.settings.tournament && s.stages.length > 1 && (
             <StageBanner kind={kind} index={s.currentIndex} total={s.order.length} />
           )}
@@ -250,10 +274,7 @@ export default function GamePage() {
                   <b>لماذا؟ </b>{q.explanation}
                 </div>
               )}
-              <div className="flex items-center justify-between gap-2">
-                <p className="prize-num text-sm tabular-nums">
-                  رصيدك: <b>{formatPrize(me?.prize ?? 0, s.settings.currency)}</b>
-                </p>
+              <div className="flex items-center justify-end gap-2">
                 {s.isHost ? (
                   <Button variant="gold" onClick={s.nextQuestion}>
                     {s.currentIndex + 1 >= s.order.length ? "النتائج النهائية ←" : "السؤال التالي ←"}
@@ -290,7 +311,7 @@ export default function GamePage() {
       <Dialog open={showLadder} onOpenChange={setShowLadder}>
         <DialogContent>
           <DialogHeader><DialogTitle>سلّم الجوائز</DialogTitle></DialogHeader>
-          <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={s.currentIndex} currency={s.settings.currency} compact />
+          <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} compact />
         </DialogContent>
       </Dialog>
       <Dialog open={showRanks} onOpenChange={setShowRanks}>

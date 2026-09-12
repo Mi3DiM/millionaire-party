@@ -53,6 +53,7 @@ interface RoomState {
   awaitingStage: boolean;
   wagers: Record<string, number>; // playerId -> pct for current wager question
   myPrizeAtStart: number; // my prize when the current question began (for FlyingGain delta)
+  myLevelAtStart: number;
 
   // actions
   createRoom: (opts: { name: string; avatarId: string; settings: RoomSettings; bank: QuestionBank; mode: ConnectionMode }) => string;
@@ -122,6 +123,7 @@ export const useRoom = create<RoomState>((set, get) => ({
   awaitingStage: false,
   wagers: {},
   myPrizeAtStart: 0,
+      myLevelAtStart: -1,
 
   createRoom: ({ name, avatarId, settings, bank, mode }) => {
     const code = genCode();
@@ -244,6 +246,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       crowdVotes: null,
       lifelinesLeft: { fifty: 1, crowd: 1, extra: 1 },
       myPrizeAtStart: 0,
+      myLevelAtStart: -1,
       players: players.map((p) => ({ ...p, status: "thinking", prize: 0, level: -1, correctCount: 0, streak: 0, bestStreak: 0, totalResponseMs: 0, eliminated: false })),
     });
     scheduleBots();
@@ -380,6 +383,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       crowdVotes: null,
       wagers: {},
       myPrizeAtStart: s.players.find((p) => p.id === s.meId)?.prize ?? 0,
+      myLevelAtStart: s.players.find((p) => p.id === s.meId)?.level ?? -1,
       players: s.players.map((p) => ({ ...p, status: p.eliminated ? "eliminated" as const : "thinking" as const })),
     });
     scheduleBots();
@@ -412,6 +416,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       players,
       wagers,
       myPrizeAtStart: players.find((p) => p.id === s.meId)?.prize ?? 0,
+      myLevelAtStart: players.find((p) => p.id === s.meId)?.level ?? -1,
       phase: "question",
       status: "playing",
       questionStartedAt: now,
@@ -460,6 +465,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       awaitingStage: false,
       wagers: {},
       myPrizeAtStart: 0,
+      myLevelAtStart: -1,
       currentIndex: 0,
       phase: "question",
       myChoice: null,
@@ -484,6 +490,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       reveal: null,
       submissions: [],
       myPrizeAtStart: 0,
+      myLevelAtStart: -1,
     });
   },
 }));
