@@ -59,7 +59,7 @@ function JoinForm({ presetCode }: { presetCode?: string }) {
         </label>
         <div>
           <p className="mb-2 text-[13px] font-semibold text-[var(--muted)]">الصورة الرمزية</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pb-1">
             {AVATARS.map((a) => (
               <button key={a.id} type="button" onClick={() => setAvatarId(a.id)} className={cn("rounded-2xl border-2 p-1", avatarId === a.id ? "border-[var(--accent)]" : "border-transparent hover:border-[var(--border)]")}>
                 <Avatar name={name || a.label} avatarId={a.id} size={42} />

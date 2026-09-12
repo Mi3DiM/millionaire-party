@@ -65,7 +65,7 @@ export default function CreateRoomPage() {
                 </label>
                 <div>
                   <p className="mb-2 text-[13px] font-semibold text-[var(--muted)]">الصورة الرمزية</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto pb-1">
                     {AVATARS.map((a) => (
                       <button
                         key={a.id}

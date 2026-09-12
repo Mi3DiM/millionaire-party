@@ -2,9 +2,13 @@ import * as React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-// Professional illustrated avatars (Notionists Neutral style, CC0 1.0 public domain
+// Professional illustrated avatars (Notionists Neutral + Notionists by Zoish,
+// Lorelei by Lisa Wischofsky, Open Peeps by Pablo Stanley — all CC0 1.0 public domain
 // via DiceBear — files vendored in public/avatars so the game works offline).
-// Ids are stable: existing rooms/players keep working unchanged.
+// Ids are stable: existing rooms/players keep working unchanged (avatar-01..12 untouched).
+// New set (avatar-13..36) adds women (incl. hijabi), girls, boys, elders
+// and bearded men in the same hand-drawn ink + pastel identity.
+// Regenerate with `node scripts/generate-avatars.mjs`.
 const AVATARS = [
   { id: "falcon", file: "/avatars/avatar-01.png", label: "صقر" },
   { id: "lion", file: "/avatars/avatar-02.png", label: "أسد" },
@@ -18,6 +22,30 @@ const AVATARS = [
   { id: "gem", file: "/avatars/avatar-10.png", label: "جوهرة" },
   { id: "owl", file: "/avatars/avatar-11.png", label: "بومة" },
   { id: "compass", file: "/avatars/avatar-12.png", label: "بوصلة" },
+  { id: "woman-sara", file: "/avatars/avatar-13.png", label: "سارة" },
+  { id: "woman-layla", file: "/avatars/avatar-14.png", label: "ليلى" },
+  { id: "woman-nour", file: "/avatars/avatar-15.png", label: "نور" },
+  { id: "woman-fatima", file: "/avatars/avatar-16.png", label: "فاطمة" },
+  { id: "woman-mariam", file: "/avatars/avatar-17.png", label: "مريم" },
+  { id: "girl-yasmin", file: "/avatars/avatar-18.png", label: "ياسمين" },
+  { id: "woman-huda", file: "/avatars/avatar-19.png", label: "هدى" },
+  { id: "woman-rania", file: "/avatars/avatar-20.png", label: "رانيا" },
+  { id: "hijabi-1", file: "/avatars/avatar-21.png", label: "محجبة" },
+  { id: "hijabi-2", file: "/avatars/avatar-22.png", label: "محجبة ٢" },
+  { id: "girl-buns", file: "/avatars/avatar-23.png", label: "فتاة" },
+  { id: "girl-lina", file: "/avatars/avatar-24.png", label: "لينا" },
+  { id: "boy-karim", file: "/avatars/avatar-25.png", label: "كريم" },
+  { id: "elder-salim", file: "/avatars/avatar-26.png", label: "مسنّ" },
+  { id: "man-omar", file: "/avatars/avatar-27.png", label: "عمران" },
+  { id: "boy-adam", file: "/avatars/avatar-28.png", label: "آدم" },
+  { id: "girl-dina", file: "/avatars/avatar-29.png", label: "دينا" },
+  { id: "youth-omar", file: "/avatars/avatar-30.png", label: "شاب" },
+  { id: "elder-beard", file: "/avatars/avatar-31.png", label: "ملتحٍ" },
+  { id: "man-youssef", file: "/avatars/avatar-32.png", label: "يوسف" },
+  { id: "man-ilyas", file: "/avatars/avatar-33.png", label: "إلياس" },
+  { id: "man-adel", file: "/avatars/avatar-34.png", label: "عادل" },
+  { id: "man-salah", file: "/avatars/avatar-35.png", label: "صلاح" },
+  { id: "man-bilal", file: "/avatars/avatar-36.png", label: "بلال" },
 ] as const;
 
 export type AvatarId = (typeof AVATARS)[number]["id"];

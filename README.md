@@ -43,5 +43,5 @@ npm run build
 
 ## الحقوق
 
-- الصور الرمزية: نمط Notionists Neutral (ريمكس Zoish) — ملكية عامة CC0 1.0، ملفات PNG محفوظة محلياً في `public/avatars/` لتعمل اللعبة دون إنترنت.
+- الصور الرمزية: 36 صورة (12 وجوه محايدة + 20 نساء/محجبات/أطفال/كبار سن + 4 رجال ملتحين) بأنماط Notionists وLorelei وOpen Peeps — ملكية عامة CC0 1.0، ملفات PNG محفوظة محلياً في `public/avatars/` لتعمل اللعبة دون إنترنت. إعادة التوليد: `node scripts/generate-avatars.mjs`.
 - الأيقونات: Solar Icons (عائلة Bold Duotone) عبر حزمة `solar-icon-set`.
