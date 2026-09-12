@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { useTheme } from "@/components/app/providers";
 import { Button } from "@/components/ui/button";
+import { GameIcon } from "@/components/ui/GameIcon";
 
 export function Header() {
   const { dict, locale, setLocale } = useI18n();
@@ -12,8 +13,8 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--background)]/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex size-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-xl font-black text-[#1a1405]">
-            م
+          <span className="flex size-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-[#1a1405]">
+            <GameIcon name="medalStar" size={24} />
           </span>
           <span className="flex flex-col leading-tight">
             <b className="text-[15px]">{dict.brand}</b>
@@ -35,8 +36,8 @@ export function Header() {
           <Button size="sm" variant="secondary" onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>
             {locale === "ar" ? "EN" : "عربي"}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            {theme === "dark" ? "☀" : "☾"}
+          <Button size="sm" variant="secondary" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={theme === "dark" ? "وضع فاتح" : "وضع داكن"}>
+            <GameIcon name={theme === "dark" ? "sun" : "moon"} size={18} />
           </Button>
         </div>
       </div>

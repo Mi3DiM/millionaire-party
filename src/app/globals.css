@@ -9,6 +9,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
@@ -18,19 +19,21 @@
 }
 
 :root {
+  color-scheme: light;
   --background: #f7f5ef;
   --foreground: #1a1c22;
   --surface: #ffffff;
-  --elevated: #ffffff;
+  --elevated: #edeae0;
   --primary: #1d4ed8;
   --primary-foreground: #ffffff;
   --secondary: #7c3aed;
   --accent: #d4a017;
+  --accent-ink: #7a5b00;
   --success: #15803d;
   --warning: #b45309;
   --danger: #b91c1c;
-  --muted: #6b7280;
-  --border: #e5e1d5;
+  --muted: #5b6270;
+  --border: #e0dccf;
   --ring: #1d4ed8;
   --radius: 1rem;
   --shadow-card: 0 1px 2px rgb(26 28 34 / 0.05), 0 8px 24px -12px rgb(26 28 34 / 0.18);
@@ -38,14 +41,16 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0c0e14;
   --foreground: #f2f0e8;
   --surface: #141824;
-  --elevated: #1b2132;
+  --elevated: #222a44;
   --primary: #6d9bff;
   --primary-foreground: #0c0e14;
   --secondary: #a78bfa;
   --accent: #e8b923;
+  --accent-ink: #f2cd4b;
   --success: #4ade80;
   --warning: #fbbf24;
   --danger: #f87171;
@@ -56,15 +61,25 @@
   --shadow-pop: 0 20px 60px -16px rgb(0 0 0 / 0.7);
 }
 
-/* Show atmosphere: deep stage theme used inside game screen */
+/* Stage mode: cinematic dark atmosphere for game + results, regardless of site theme.
+   Header/Footer inside a .theme-show ancestor inherit these tokens automatically. */
 .theme-show {
+  color-scheme: dark;
   --background: #0a0c16;
   --foreground: #f5f1e4;
   --surface: #12172a;
-  --elevated: #1a2140;
+  --elevated: #1f2748;
   --primary: #7aa5ff;
+  --primary-foreground: #0a0c16;
+  --secondary: #a78bfa;
   --accent: #f0c420;
+  --accent-ink: #f5d547;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --muted: #a7aec4;
   --border: #2a3360;
+  --ring: #7aa5ff;
 }
 
 html {

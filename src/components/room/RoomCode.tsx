@@ -3,6 +3,7 @@
 import * as React from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
 
@@ -25,14 +26,14 @@ export function RoomCode({ code }: { code: string }) {
       </span>
       <div className="flex flex-wrap justify-center gap-2">
         <Button size="sm" variant="secondary" onClick={() => copy(code, "تم نسخ الرمز")}>
-          نسخ الرمز
+          <GameIcon name="copy" size={16} /> نسخ الرمز
         </Button>
         <Button size="sm" variant="secondary" onClick={() => copy(joinUrl, "تم نسخ رابط الدعوة")}>
-          نسخ الرابط
+          <GameIcon name="link" size={16} /> نسخ الرابط
         </Button>
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="sm" variant="secondary">QR</Button>
+            <Button size="sm" variant="secondary"><GameIcon name="qr" size={16} /> QR</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

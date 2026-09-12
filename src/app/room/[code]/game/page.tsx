@@ -7,6 +7,7 @@ import { Header, Footer } from "@/components/app/shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Timer } from "@/components/game/Timer";
 import { PrizeLadder } from "@/components/game/PrizeLadder";
@@ -124,7 +125,7 @@ export default function GamePage() {
       : s.players.filter((p) => !p.eliminated).map((p) => p.id);
 
   return (
-    <div className="theme-show flex min-h-screen flex-col bg-[#0a0c16] text-[#f5f1e4]">
+    <div className="theme-show flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
       <Header />
       <div className="mx-auto grid w-full max-w-7xl flex-1 gap-4 px-4 py-6 lg:grid-cols-[260px_1fr_300px]">
         {/* Ladder (desktop) */}
@@ -151,7 +152,7 @@ export default function GamePage() {
               </Badge>
             )}
             <div className="flex items-center gap-2">
-              {kind === "speed" && !isReveal && <Badge variant="gold">×2 ⚡</Badge>}
+              {kind === "speed" && !isReveal && <Badge variant="gold"><GameIcon name="bolt" size={14} /> ×2</Badge>}
               <div className="flex gap-2 lg:hidden">
                 <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
                 <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
@@ -160,8 +161,8 @@ export default function GamePage() {
           </div>
 
           {meEliminated && (
-            <p className="rounded-2xl border border-white/15 bg-white/5 p-3 text-center text-sm">
-              👀 أنت في الجمهور الآن — شاهد بقية {STAGE_META[kind].ar}!
+            <p className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 p-3 text-center text-sm">
+              <GameIcon name="eye" size={18} /> أنت في الجمهور الآن — شاهد بقية {STAGE_META[kind].ar}!
             </p>
           )}
 

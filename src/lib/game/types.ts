@@ -100,40 +100,40 @@ export const MATCH_PRESETS: Record<
 
 export const STAGE_META: Record<
   StageKind,
-  { ar: string; en: string; icon: string; rules: string; rulesEn: string }
+  { ar: string; en: string; icon: "gamepad" | "bolt" | "users" | "cup" | "crown"; rules: string; rulesEn: string }
 > = {
   qualifier: {
     ar: "التصفيات",
     en: "Qualifiers",
-    icon: "◈",
+    icon: "gamepad",
     rules: "الجميع يلعب. اجمع أعلى رصيد لتتأهل.",
     rulesEn: "Everyone plays. Top scorers advance.",
   },
   speed: {
-    ar: "جولة السرعة ⚡",
+    ar: "جولة السرعة",
     en: "Speed round",
-    icon: "⚡",
+    icon: "bolt",
     rules: "10 ثوانٍ فقط! الإجابة الصحيحة تصعد مستويين.",
     rulesEn: "10 seconds only! Correct answers climb two levels.",
   },
   semifinal: {
     ar: "نصف النهائي",
     en: "Semifinal",
-    icon: "◐",
+    icon: "users",
     rules: "المتأهلون فقط يكملون. البقية يشاهدون كجمهور.",
     rulesEn: "Qualified players only. Others watch as crowd.",
   },
   wager: {
     ar: "جولة الرهان",
     en: "Wager round",
-    icon: "◆",
+    icon: "cup",
     rules: "راهن بـ25/50/100% من رصيدك قبل كل سؤال. صح = ربح الرهان، خطأ = خسارته.",
     rulesEn: "Wager 25/50/100% of your prize. Win it or lose it.",
   },
   final: {
-    ar: "النهائي ♛",
+    ar: "النهائي",
     en: "Final",
-    icon: "♛",
+    icon: "crown",
     rules: "الأسئلة الحاسمة. الأعلى رصيداً يتوج مليونيراً.",
     rulesEn: "Decisive questions. Top prize takes the crown.",
   },

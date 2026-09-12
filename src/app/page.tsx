@@ -7,6 +7,7 @@ import { Header, Footer, PageContainer } from "@/components/app/shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { ALL_QUESTIONS, CATEGORIES } from "@/data/questions";
 import { formatPrize } from "@/lib/utils";
 import { DEFAULT_PRIZE_LADDER } from "@/lib/game/types";
@@ -72,15 +73,15 @@ export default function Home() {
         {/* HOW IT WORKS */}
         <section className="grid gap-3 py-6 md:grid-cols-4">
           {[
-            { t: "أنشئ غرفة", d: "اختر الفئات والصعوبة والمؤقت ووسائل المساعدة.", i: "◈" },
-            { t: "شارك الرمز", d: "رمز قصير + رابط + QR. انضمام بالاسم فقط.", i: "⎙" },
-            { t: "أجيبوا معاً", d: "نفس الأسئلة للجميع تحت نفس المؤقت.", i: "◷" },
-            { t: "اصعد السلّم", d: "السرعة والدقة تصنعان الفائز بالمليون.", i: "♛" },
+            { t: "أنشئ غرفة", d: "اختر الفئات والصعوبة والمؤقت ووسائل المساعدة.", i: "gamepad" as const },
+            { t: "شارك الرمز", d: "رمز قصير + رابط + QR. انضمام بالاسم فقط.", i: "qr" as const },
+            { t: "أجيبوا معاً", d: "نفس الأسئلة للجميع تحت نفس المؤقت.", i: "clock" as const },
+            { t: "اصعد السلّم", d: "السرعة والدقة تصنعان الفائز بالمليون.", i: "crown" as const },
           ].map((s, i) => (
             <motion.div key={s.t} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card>
                 <CardContent className="flex flex-col gap-2 p-5">
-                  <span className="text-2xl" aria-hidden>{s.i}</span>
+                  <GameIcon name={s.i} size={30} className="text-[var(--primary)]" />
                   <b>{s.t}</b>
                   <p className="text-[13.5px] leading-relaxed text-[var(--muted)]">{s.d}</p>
                 </CardContent>

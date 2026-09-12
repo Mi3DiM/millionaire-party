@@ -66,7 +66,7 @@ export default function LobbyPage() {
                 <Row k="الفئات" v={s.settings.categories.includes("mixed") ? "منوعة" : s.settings.categories.map((c) => categoryName(c, locale)).join("، ")} />
                 <Row k="الصعوبة" v={difficultyName(s.settings.difficulty, locale)} />
                 <Row k="المدة" v={`${MATCH_PRESETS[s.settings.matchLength]?.ar ?? s.settings.matchLength} · ${MATCH_PRESETS[s.settings.matchLength]?.minutes ?? ""}`} />
-                <Row k="النظام" v={s.settings.tournament ? "🏆 بطولة مراحل" : "جولة كلاسيكية"} />
+                <Row k="النظام" v={s.settings.tournament ? "بطولة مراحل" : "جولة كلاسيكية"} />
                 <Row k="الأسئلة" v={`${s.settings.questionCount}${s.settings.tournament ? " + جولات خاصة" : ""}`} />
                 <Row k="المؤقت" v={`${s.settings.timerSeconds}s`} />
                 <Row k="اللاعبون" v={`${s.players.length} / ${s.settings.maxPlayers}`} />
@@ -156,7 +156,7 @@ export default function LobbyPage() {
                 <p>1. الجميع يستقبل <b className="text-[var(--foreground)]">نفس السؤال</b> في نفس اللحظة.</p>
                 <p>2. أجب قبل انتهاء <b className="text-[var(--foreground)]">المؤقت</b> — السرعة ترفع ترتيبك.</p>
                 <p>3. الكشف <b className="text-[var(--foreground)]">متزامن</b> ثم سلّم الجوائز والترتيب.</p>
-                <p>4. نقاط الأمان ◆ تحفظ جزءاً من رصيدك عند الخطأ.</p>
+                <p>4. نقاط الأمان (شارة الدرع في السلّم) تحفظ جزءاً من رصيدك عند الخطأ.</p>
               </CardContent>
             </Card>
             <Button variant="ghost" onClick={() => { s.leaveRoom(); router.push("/"); }}>مغادرة الغرفة</Button>

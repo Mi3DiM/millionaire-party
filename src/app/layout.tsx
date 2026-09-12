@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   },
   description:
     "لعبة مسابقات جماعية لحظية: أنشئ غرفة، ادعُ أصدقاءك، أجيبوا على نفس الأسئلة تحت نفس المؤقت، وتسلّقوا سلّم الجوائز.",
+  manifest: "/manifest.webmanifest",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0c16" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f5ef" },
+  ],
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/avatars/avatar-01.png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

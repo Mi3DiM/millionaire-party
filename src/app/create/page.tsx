@@ -120,7 +120,7 @@ export default function CreateRoomPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 sm:col-span-2 rounded-2xl border border-[var(--border)] p-3">
-                  <Switch checked={settings.tournament} onCheckedChange={(v) => setSettings((s) => ({ ...s, tournament: v }))} label="🏆 بطولة مراحل (تصفيات ← سرعة ⚡ ← نصف نهائي ← رهان ◆ ← نهائي ♛)" />
+                  <Switch checked={settings.tournament} onCheckedChange={(v) => setSettings((s) => ({ ...s, tournament: v }))} label="بطولة مراحل (تصفيات ← سرعة ← نصف نهائي ← رهان ← نهائي)" />
                   <p className="text-[12px] text-[var(--muted)]">يتأهل أصحاب المراكز الأولى فقط. إيقافها = جولة كلاسيكية واحدة.</p>
                 </div>
                 <div className="flex flex-col gap-2.5 sm:col-span-2">

@@ -8,6 +8,7 @@ import { validateRows, type RowReport } from "@/lib/bank/validate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { useToast } from "@/components/ui/toast";
 import { uid } from "@/lib/utils";
 
@@ -100,7 +101,7 @@ export function BankManager({
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <label className="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-dashed border-[var(--border)] p-6 text-center hover:bg-[var(--elevated)]">
-            <span className="text-2xl" aria-hidden>⇪</span>
+            <GameIcon name="upload" size={30} className="text-[var(--primary)]" />
             <span className="text-sm font-bold">{busy ? "جارٍ التحليل…" : "اختر ملفاً أو أسقطه هنا"}</span>
             <input
               type="file"

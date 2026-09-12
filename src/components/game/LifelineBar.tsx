@@ -2,6 +2,7 @@
 
 import type { LifelineKind } from "@/lib/game/types";
 import { Button } from "@/components/ui/button";
+import { GameIcon, type GameIconName } from "@/components/ui/GameIcon";
 import { cn } from "@/lib/utils";
 
 export function LifelineBar({
@@ -15,10 +16,10 @@ export function LifelineBar({
   onUse: (k: LifelineKind) => void;
   disabled?: boolean;
 }) {
-  const items: { kind: LifelineKind; icon: string; name: string; desc: string; on: boolean; n: number }[] = [
-    { kind: "fifty", icon: "◐", name: "50/50", desc: "إزالة إجابتين خاطئتين", on: enabled.fifty, n: left.fifty },
-    { kind: "crowd", icon: "◫", name: "الجمهور", desc: "رأي الجمهور بالنسب", on: enabled.crowd, n: left.crowd },
-    { kind: "extra", icon: "◷", name: "+15 ثانية", desc: "وقت إضافي", on: enabled.extraTime, n: left.extra },
+  const items: { kind: LifelineKind; icon: GameIconName; name: string; desc: string; on: boolean; n: number }[] = [
+    { kind: "fifty", icon: "pie", name: "50/50", desc: "إزالة إجابتين خاطئتين", on: enabled.fifty, n: left.fifty },
+    { kind: "crowd", icon: "users", name: "الجمهور", desc: "رأي الجمهور بالنسب", on: enabled.crowd, n: left.crowd },
+    { kind: "extra", icon: "clock", name: "+15 ثانية", desc: "وقت إضافي", on: enabled.extraTime, n: left.extra },
   ];
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="وسائل المساعدة">
@@ -34,7 +35,7 @@ export function LifelineBar({
             title={it.desc}
             className={cn(used && "opacity-40 line-through")}
           >
-            <span aria-hidden>{it.icon}</span> {it.name}
+            <GameIcon name={it.icon} size={16} /> {it.name}
           </Button>
         );
       })}

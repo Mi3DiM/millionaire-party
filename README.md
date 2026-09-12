@@ -28,7 +28,6 @@ npm run build
 - البنية (`GameTransport` abstraction) جاهزة لإضافة Supabase/Socket.io لاحقاً بدون تغيير منطق اللعبة.
 
 ## الأسئلة
-
 - `src/data/questions/batch-{a,b,c}.json`: ~150 سؤالاً عربياً عبر 14 فئة (علوم، تاريخ، جغرافيا، منطق، رياضيات، تقنية، طبيعة، جسم، لغة، الجزائر، عربي، إسلامية، يومية، ذكاء).
 - كل سؤال: 4 خيارات + إجابة واحدة صحيحة + شرح.
 - الاستيراد (المضيف فقط): XLSX/CSV/JSON → تحليل → تحقق → معاينة → استيراد. انظر `src/lib/bank/`.
@@ -41,3 +40,8 @@ npm run build
 
 - `npm run typecheck` + `npm run test` + `npm run build` + `npm run lint` قبل كل push.
 - هوية بصرية أصلية بالكامل — مفهوم سلّم الجوائز فقط كمفهوم عام، بلا نسخ لأي علامة تلفزيونية.
+
+## الحقوق
+
+- الصور الرمزية: نمط Notionists Neutral (ريمكس Zoish) — ملكية عامة CC0 1.0، ملفات PNG محفوظة محلياً في `public/avatars/` لتعمل اللعبة دون إنترنت.
+- الأيقونات: Solar Icons (عائلة Bold Duotone) عبر حزمة `solar-icon-set`.

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { formatPrize } from "@/lib/utils";
 import { CHECKPOINT_LEVELS } from "@/lib/game/types";
+import { GameIcon } from "@/components/ui/GameIcon";
 
 export function PrizeLadder({
   ladder,
@@ -37,7 +38,7 @@ export function PrizeLadder({
               <span className={cn("text-[11px]", state === "current" ? "opacity-70" : "opacity-50")}>
                 {String(i + 1).padStart(2, "0")}
               </span>
-              {checkpoint && <span aria-label="نقطة أمان" title="نقطة أمان">◆</span>}
+              {checkpoint && <GameIcon name="shield" size={13} className={state === "current" ? "text-[#1a1405]" : "text-[var(--accent-ink)]"} />}
             </span>
             <span>{formatPrize(v, currency)}</span>
           </li>

@@ -7,6 +7,7 @@ import { Header, Footer, PageContainer } from "@/components/app/shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { Confetti, CountUp } from "@/components/game/StageFx";
 import { useRoom, selectRankedPlayers } from "@/lib/game/store";
 import { formatPrize } from "@/lib/utils";
@@ -36,7 +37,7 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="theme-show flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
       <Header />
       <Confetti fire />
       <PageContainer>
@@ -45,7 +46,7 @@ export default function ResultsPage() {
             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}>
               <Card className="theme-show border-[var(--accent)]/40 bg-[#0a0c16] text-center text-[#f5f1e4]">
                 <CardContent className="flex flex-col items-center gap-3 p-8">
-                  <span className="text-5xl" aria-hidden>♛</span>
+                  <GameIcon name="crown" size={52} className="text-[var(--accent)]" />
                   <p className="text-sm text-white/60">الفائز</p>
                   <div className="flex items-center gap-3">
                     <Avatar name={winner.name} avatarId={winner.avatarId} size={56} />

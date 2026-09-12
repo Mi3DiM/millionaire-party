@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { Player, StageKind } from "@/lib/game/types";
 import { STAGE_META } from "@/lib/game/types";
 import { Button } from "@/components/ui/button";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { Card, CardContent } from "@/components/ui/card";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { formatPrize } from "@/lib/utils";
@@ -20,8 +21,8 @@ export function StageBanner({ kind, index, total }: { kind: StageKind; index: nu
       animate={{ opacity: 1, scale: 1 }}
       className="flex items-center gap-3 rounded-3xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 p-4"
     >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-2xl text-[#1a1405]" aria-hidden>
-        {meta.icon}
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-[#1a1405]">
+        <GameIcon name={meta.icon} size={26} />
       </span>
       <div className="min-w-0 flex-1">
         <b className="text-[15px]">{locale === "ar" ? meta.ar : meta.en}</b>
@@ -60,7 +61,7 @@ export function Halftime({
         <Card className="theme-show border-[var(--accent)]/40 bg-[#0a0c16] text-[#f5f1e4]">
           <CardContent className="flex max-h-[85vh] flex-col gap-4 overflow-auto p-6">
             <div className="flex flex-col items-center gap-1 text-center">
-              <span className="text-4xl" aria-hidden>{meta.icon}</span>
+              <GameIcon name={meta.icon} size={44} />
               <h2 className="text-xl font-black">{locale === "ar" ? meta.ar : meta.en}</h2>
               <p className="text-[13.5px] text-white/60">{locale === "ar" ? meta.rules : meta.rulesEn}</p>
               {!meQualified && (kind === "semifinal" || kind === "final") && (
@@ -104,7 +105,7 @@ export function WagerDialog({
   }
   return (
     <div className="anim-pop rounded-3xl border border-[var(--accent)]/40 bg-[var(--accent)]/8 p-4" role="group" aria-label="اختر رهانك">
-      <p className="text-center text-sm font-black">◆ كم تراهن من رصيدك ({formatPrize(prize, currency)})؟</p>
+      <p className="flex items-center justify-center gap-2 text-center text-sm font-black"><GameIcon name="cup" size={18} /> كم تراهن من رصيدك ({formatPrize(prize, currency)})؟</p>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {([25, 50, 100] as const).map((pct) => (
           <Button key={pct} variant={pct === 100 ? "gold" : "secondary"} onClick={() => onPick(pct)}>

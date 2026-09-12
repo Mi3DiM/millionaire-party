@@ -1,30 +1,30 @@
 import * as React from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+// Professional illustrated avatars (Notionists Neutral style, CC0 1.0 public domain
+// via DiceBear — files vendored in public/avatars so the game works offline).
+// Ids are stable: existing rooms/players keep working unchanged.
 const AVATARS = [
-  { id: "falcon", glyph: "ص", label: "صقر" },
-  { id: "lion", glyph: "أ", label: "أسد" },
-  { id: "star", glyph: "ن", label: "نجمة" },
-  { id: "wave", glyph: "م", label: "موجة" },
-  { id: "palm", glyph: "خ", label: "نخلة" },
-  { id: "atom", glyph: "ذ", label: "ذرّة" },
-  { id: "crown", glyph: "ت", label: "تاج" },
-  { id: "moon", glyph: "ق", label: "قمر" },
-  { id: "sun", glyph: "ش", label: "شمس" },
-  { id: "gem", glyph: "ج", label: "جوهرة" },
-  { id: "owl", glyph: "ب", label: "بومة" },
-  { id: "compass", glyph: "ك", label: "بوصلة" },
+  { id: "falcon", file: "/avatars/avatar-01.png", label: "صقر" },
+  { id: "lion", file: "/avatars/avatar-02.png", label: "أسد" },
+  { id: "star", file: "/avatars/avatar-03.png", label: "نجمة" },
+  { id: "wave", file: "/avatars/avatar-04.png", label: "موجة" },
+  { id: "palm", file: "/avatars/avatar-05.png", label: "نخلة" },
+  { id: "atom", file: "/avatars/avatar-06.png", label: "ذرّة" },
+  { id: "crown", file: "/avatars/avatar-07.png", label: "تاج" },
+  { id: "moon", file: "/avatars/avatar-08.png", label: "قمر" },
+  { id: "sun", file: "/avatars/avatar-09.png", label: "شمس" },
+  { id: "gem", file: "/avatars/avatar-10.png", label: "جوهرة" },
+  { id: "owl", file: "/avatars/avatar-11.png", label: "بومة" },
+  { id: "compass", file: "/avatars/avatar-12.png", label: "بوصلة" },
 ] as const;
 
 export type AvatarId = (typeof AVATARS)[number]["id"];
 export { AVATARS };
 
-const HUES = [222, 265, 38, 150, 190, 330, 20, 250];
-
-export function avatarHue(id: string): number {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 997;
-  return HUES[h % HUES.length];
+export function avatarFile(id?: string): string {
+  return AVATARS.find((a) => a.id === id)?.file ?? AVATARS[0].file;
 }
 
 export function Avatar({
@@ -38,21 +38,29 @@ export function Avatar({
   size?: number;
   className?: string;
 }) {
-  const glyph =
-    AVATARS.find((a) => a.id === avatarId)?.glyph ?? name.trim().charAt(0).toUpperCase() ?? "؟";
-  const hue = avatarHue(name + (avatarId ?? ""));
+  const [broken, setBroken] = React.useState(false);
+  const file = avatarFile(avatarId);
+  if (broken) {
+    // Offline-safe fallback: initial letter on gradient.
+    return (
+      <span
+        aria-hidden
+        className={cn("inline-flex shrink-0 items-center justify-center rounded-2xl bg-[var(--primary)] font-bold text-white", className)}
+        style={{ width: size, height: size, fontSize: size * 0.42 }}
+      >
+        {(name.trim().charAt(0) || "؟").toUpperCase()}
+      </span>
+    );
+  }
   return (
-    <span
-      aria-hidden
-      className={cn("inline-flex shrink-0 items-center justify-center rounded-2xl font-bold text-white", className)}
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.42,
-        background: `linear-gradient(135deg, hsl(${hue} 55% 45%), hsl(${(hue + 40) % 360} 60% 35%))`,
-      }}
-    >
-      {glyph}
-    </span>
+    <Image
+      src={file}
+      alt=""
+      width={size}
+      height={size}
+      onError={() => setBroken(true)}
+      className={cn("shrink-0 rounded-2xl border border-[var(--border)] object-cover", className)}
+      style={{ width: size, height: size }}
+    />
   );
 }

@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { GameIcon } from "@/components/ui/GameIcon";
 import { categoryName, difficultyName } from "@/data/questions";
 import { useI18n } from "@/i18n/provider";
 
@@ -47,8 +48,8 @@ export function AnswerOption({
         {LETTERS[displayIndex]}
       </span>
       <span className="flex-1 text-[15px] font-medium leading-relaxed">{text}</span>
-      {state === "correct" && <span aria-hidden>✓</span>}
-      {state === "wrong" && <span aria-hidden>✕</span>}
+      {state === "correct" && <GameIcon name="check" size={22} className="text-[var(--success)]" />}
+      {state === "wrong" && <GameIcon name="close" size={22} className="text-[var(--danger)]" />}
       {votes !== undefined && <span className="prize-num text-[13px] font-black">{votes}٪</span>}
     </button>
   );
@@ -79,7 +80,7 @@ export function QuestionCard({
           {locale === "ar" ? `السؤال ${index + 1} / ${total}` : `Question ${index + 1} / ${total}`}
         </span>
       </div>
-      <p className="prize-num mt-2 text-[13px] font-black text-[var(--accent)]">{prizeLabel}</p>
+      <p className="prize-num mt-2 text-[13px] font-black text-[var(--accent-ink)]">{prizeLabel}</p>
       <h1 className="mt-3 text-xl font-bold leading-[1.9] md:text-2xl md:leading-[1.9]">{text}</h1>
     </div>
   );
