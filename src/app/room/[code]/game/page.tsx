@@ -158,7 +158,7 @@ export default function GamePage() {
         <aside className="hidden lg:block">
           <Card className="border-white/10 bg-white/5">
             <CardContent className="p-4">
-              <b className="mb-2 block text-sm">سلّم الجوائز</b>
+              <b className="mb-2 flex items-center gap-2 text-sm"><GameIcon name="cup" size={17} className="text-[var(--accent)]" /> سلّم الجوائز</b>
               <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} />
             </CardContent>
           </Card>
@@ -192,8 +192,8 @@ export default function GamePage() {
               </Badge>
             )}
             <div className="flex gap-2 lg:hidden">
-              <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
-              <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
+              <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}><GameIcon name="cup" size={16} /> الجوائز</Button>
+              <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}><GameIcon name="users" size={16} /> الترتيب</Button>
             </div>
           </div>
 
@@ -286,7 +286,7 @@ export default function GamePage() {
 
         {/* Ranks (desktop) */}
         <aside className="hidden lg:block">
-          <b className="mb-2 block text-sm">الترتيب المباشر</b>
+          <b className="mb-2 flex items-center gap-2 text-sm"><GameIcon name="users" size={17} className="text-[var(--primary)]" /> الترتيب المباشر</b>
           <Leaderboard players={s.players} currency={s.settings.currency} meId={s.meId} />
         </aside>
       </div>
@@ -307,13 +307,13 @@ export default function GamePage() {
       {/* Mobile drawers */}
       <Dialog open={showLadder} onOpenChange={setShowLadder}>
         <DialogContent>
-          <DialogHeader><DialogTitle>سلّم الجوائز</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><GameIcon name="cup" size={18} className="text-[var(--accent)]" /> سلّم الجوائز</DialogTitle></DialogHeader>
           <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} compact />
         </DialogContent>
       </Dialog>
       <Dialog open={showRanks} onOpenChange={setShowRanks}>
         <DialogContent>
-          <DialogHeader><DialogTitle>الترتيب المباشر</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><GameIcon name="users" size={18} className="text-[var(--primary)]" /> الترتيب المباشر</DialogTitle></DialogHeader>
           <Leaderboard players={s.players} currency={s.settings.currency} meId={s.meId} />
         </DialogContent>
       </Dialog>
