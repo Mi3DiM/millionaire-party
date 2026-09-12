@@ -48,43 +48,47 @@ export function MatchStatusBar({
     <div className="sticky top-16 z-30 lg:static">
       <div
         className={cn(
-          "grid items-center gap-3 rounded-3xl border border-[var(--accent)]/40 bg-[var(--surface)]/95 px-4 py-3 shadow-[var(--shadow-card)] backdrop-blur transition-colors md:grid-cols-[1fr_auto_1fr] md:gap-4",
+          "flex items-center gap-2.5 rounded-2xl border border-[var(--accent)]/40 bg-[var(--surface)]/95 px-3 py-2 shadow-sm backdrop-blur transition-colors md:gap-3",
           wentUp === true && "border-[var(--success)]/60",
           wentUp === false && "border-[var(--danger)]/60"
         )}
       >
         {/* Balance zone (first in RTL) */}
-        <BalanceHud
-          bare
-          prize={prize}
-          fromPrize={fromPrize}
-          currency={currency}
-          rank={rank}
-          totalPlayers={totalPlayers}
-          gap={gap}
-          level={level}
-          wagerPct={wagerPct}
-          wentUp={wentUp}
-        />
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <BalanceHud
+            bare
+            prize={prize}
+            fromPrize={fromPrize}
+            currency={currency}
+            rank={rank}
+            totalPlayers={totalPlayers}
+            gap={gap}
+            level={level}
+            wagerPct={wagerPct}
+            wentUp={wentUp}
+          />
+        </div>
         {/* Divider */}
-        <div aria-hidden className="hidden h-12 w-px bg-[var(--border)] md:block" />
+        <div aria-hidden className="h-9 w-px shrink-0 bg-[var(--border)]" />
         {/* Stage zone */}
-        <div className="flex min-w-0 items-center gap-2 border-t border-[var(--border)] pt-2.5 md:border-0 md:pt-0">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
           {showTournament ? (
             <StageBanner compact kind={stageKind} index={questionIndex} total={questionTotal} />
           ) : (
-            <span className="prize-num text-[12px] text-[var(--muted)] tabular-nums">
+            <span className="prize-num text-[11.5px] text-[var(--muted)] tabular-nums">
               سؤال {questionIndex + 1} / {questionTotal}
             </span>
           )}
-          <span className="ms-auto flex shrink-0 gap-1.5">
-            {speed && (
-              <Badge variant="gold"><GameIcon name="bolt" size={14} /> ×2</Badge>
-            )}
-            {streak >= 2 && (
-              <Badge variant="gold"><GameIcon name="fire" size={14} /> ×{streak}</Badge>
-            )}
-          </span>
+          {(speed || streak >= 2) && (
+            <span className="flex shrink-0 gap-1">
+              {speed && (
+                <Badge variant="gold"><GameIcon name="bolt" size={13} /> ×2</Badge>
+              )}
+              {streak >= 2 && (
+                <Badge variant="gold"><GameIcon name="fire" size={13} /> ×{streak}</Badge>
+              )}
+            </span>
+          )}
         </div>
       </div>
     </div>

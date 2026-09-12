@@ -35,31 +35,31 @@ export function BalanceHud({
 }) {
   const content = (
     <>
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-[#1a1405]">
-        <GameIcon name="cup" size={24} />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[#1a1405]">
+        <GameIcon name="cup" size={20} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col leading-tight">
-        <span className="text-[11px] font-bold text-[var(--muted)]">رصيدك</span>
-        <b className="prize-num truncate text-xl tabular-nums md:text-2xl">
+        <span className="text-[10px] font-bold text-[var(--muted)]">رصيدك</span>
+        <b className="prize-num truncate text-lg tabular-nums md:text-xl">
           <CountUp value={prize} from={fromPrize} currency={currency} />
         </b>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-1">
-        <div className="flex gap-1.5">
+      <div className="flex shrink-0 flex-col items-end gap-0.5">
+        <div className="flex gap-1">
           <Badge variant={rank === 1 ? "gold" : "info"}>#{rank} / {totalPlayers}</Badge>
-          {level >= 0 && <Badge>مستوى {level + 1}</Badge>}
+          {level >= 0 && <Badge className="hidden min-[420px]:inline-flex">مستوى {level + 1}</Badge>}
+          {wagerPct !== undefined && (
+            <Badge variant="warning">رهان {wagerPct}%</Badge>
+          )}
         </div>
         {gap > 0 ? (
-          <span className="prize-num text-[11px] text-[var(--muted)] tabular-nums">
-            يفصلك عن الصدارة {gap.toLocaleString("en-US")}
+          <span className="prize-num hidden text-[10.5px] text-[var(--muted)] tabular-nums min-[400px]:block">
+            الفارق {gap.toLocaleString("en-US")}
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-[11px] font-bold text-[var(--accent-ink)]">
-            <GameIcon name="crown" size={13} /> أنت المتصدر!
+          <span className="flex items-center gap-1 text-[10.5px] font-bold text-[var(--accent-ink)]">
+            <GameIcon name="crown" size={12} /> المتصدر!
           </span>
-        )}
-        {wagerPct !== undefined && (
-          <span className="text-[11px] font-bold text-[var(--warning)]">رهانك {wagerPct}%</span>
         )}
       </div>
     </>
