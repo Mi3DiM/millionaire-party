@@ -76,24 +76,28 @@ export default function GamePage() {
   const me = s.players.find((p) => p.id === s.meId);
   const mySub = s.reveal?.submissions.find((x) => x.playerId === s.meId);
   const isReveal = s.phase === "reveal";
-  const myCorrect = isReveal && mySub ? mySub.choice === s.reveal!.correct : null;
   const myRank = React.useMemo(() => {
     const r = rankPlayers(s.players).findIndex((p) => p.id === s.meId);
     return r >= 0 ? r + 1 : null;
   }, [s.players, s.meId]);
   const prevRank = React.useRef<number | null>(null);
   const prevRevealQ = React.useRef<string | null>(null);
-  // Which question the 3-2-1 veil has lifted for (resets implicitly per question).
+  // Which question the 3-2-1 veil has lifted for.
   const [veilDoneFor, setVeilDoneFor] = React.useState<string | null>(null);
   const qid = q?.id ?? null;
   const veilLifted = !!q && isReveal && veilDoneFor === q.id;
+  // Visual reveal only after the veil lifts — gates colors, badge, explanation.
+  const showReveal = isReveal && veilLifted;
+  const myCorrect = showReveal && mySub ? mySub.choice === s.reveal!.correct : null;
   const handleVeilDone = React.useCallback(() => {
     setVeilDoneFor(qid);
   }, [qid]);
-  const gain = me && veilLifted ? Math.max(0, me.prize - s.myPrizeAtStart) : 0;
+  // Note: no reset effect — a new qid implicitly makes veilLifted false
+  // until its own veil completes, avoiding set-state-in-effect cascades.
+  const gain = me && showReveal ? Math.max(0, me.prize - s.myPrizeAtStart) : 0;
   const hud = leaderGap(s.players, s.meId);
   const wentUp =
-    me && isReveal && veilLifted
+    me && showReveal
       ? me.prize > s.myPrizeAtStart
         ? true
         : me.prize < s.myPrizeAtStart
@@ -102,7 +106,7 @@ export default function GamePage() {
       : null;
   React.useEffect(() => {
     // Sounds land with the reveal (after the 3-2-1 veil lifts), not behind it.
-    if (isReveal && veilLifted && qid && prevRevealQ.current !== qid) {
+    if (showReveal && qid && prevRevealQ.current !== qid) {
       prevRevealQ.current = qid;
       if (mySub?.choice === null) {
         sfx.wrong();
@@ -125,7 +129,7 @@ export default function GamePage() {
     }
     if (isReveal && myRank !== null) prevRank.current = myRank;
     if (!isReveal) prevRevealQ.current = null;
-  }, [isReveal, veilLifted, qid, mySub, myCorrect, myRank, kind, me, s.myLevelAtStart]);
+  }, [isReveal, showReveal, qid, mySub, myCorrect, myRank, kind, me, s.myLevelAtStart]);
 
   // Lock feedback.
   const prevLocked = React.useRef(s.myLocked);
@@ -139,7 +143,7 @@ export default function GamePage() {
 
   if (!q) return null;
 
-  const trueCorrect = isReveal ? s.reveal?.correct : undefined;
+  const trueCorrect = showReveal ? s.reveal?.correct : undefined;
   const prizeLabel = formatPrize(DEFAULT_PRIZE_LADDER[Math.min(s.currentIndex, DEFAULT_PRIZE_LADDER.length - 1)] ?? 0, s.settings.currency);
   const meEliminated = !!me?.eliminated;
   const myWager = s.meId ? s.wagers[s.meId] : undefined;
@@ -150,15 +154,15 @@ export default function GamePage() {
       : s.players.filter((p) => !p.eliminated).map((p) => p.id);
 
   return (
-    <div className="theme-show flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
       {kind === "final" && <div className="stage-final-bg pointer-events-none fixed inset-0 z-0" aria-hidden />}
       <Header />
       <div className="relative z-10 mx-auto grid w-full max-w-7xl flex-1 gap-4 px-4 py-6 lg:grid-cols-[260px_1fr_300px]">
         {/* Ladder (desktop) */}
         <aside className="hidden lg:block">
-          <Card className="border-white/10 bg-white/5">
+          <Card className="border-[var(--border)] bg-[var(--surface)]/60">
             <CardContent className="p-4">
-              <b className="mb-2 flex items-center gap-2 text-sm"><GameIcon name="cup" size={17} className="text-[var(--accent)]" /> سلّم الجوائز</b>
+              <b className="mb-2 flex items-center gap-2 text-sm"><GameIcon name="cup" size={17} className="text-[var(--accent-ink)]" /> سلّم الجوائز</b>
               <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} />
             </CardContent>
           </Card>
@@ -185,9 +189,13 @@ export default function GamePage() {
             needWager={needWager}
             onWager={(pct) => { s.placeWager(pct); haptics.tap(); }}
           />
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex min-h-[76px] items-center justify-between gap-3">
             {!isReveal ? (
               <Timer key={q.id + String(s.questionStartedAt)} endsAt={s.questionEndsAt} startedAt={s.questionStartedAt} onExpire={onExpire} onSecond={onSecond} />
+            ) : !showReveal ? (
+              <Badge variant="default" className="px-4 py-2 text-sm">
+                {locale === "ar" ? "جاري الكشف…" : "Revealing…"}
+              </Badge>
             ) : (
               <Badge variant={myCorrect ? "success" : "danger"} className="px-4 py-2 text-sm">
                 {mySub?.choice === null ? (locale === "ar" ? "انتهى الوقت" : "Time out") : myCorrect ? (locale === "ar" ? "إجابة صحيحة ✓" : "Correct ✓") : (locale === "ar" ? "إجابة خاطئة ✕" : "Wrong ✕")}
@@ -200,13 +208,13 @@ export default function GamePage() {
           </div>
 
           {meEliminated && (
-            <p className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 p-3 text-center text-sm">
+            <p className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-3 text-center text-sm">
               <GameIcon name="eye" size={18} /> أنت في الجمهور الآن — شاهد بقية {STAGE_META[kind].ar}!
             </p>
           )}
 
           <AnimatePresence mode="wait">
-            <motion.div key={q.id + s.phase} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+            <motion.div key={q.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
               <QuestionCard
                 category={q.category}
                 difficulty={q.difficulty}
@@ -219,8 +227,8 @@ export default function GamePage() {
           </AnimatePresence>
 
           <motion.div
-            key={q.id + (isReveal ? (myCorrect ? "-win" : "-lose") : "")}
-            animate={isReveal && veilLifted && !myCorrect ? { x: [0, -10, 10, -6, 6, 0] } : { x: 0 }}
+            key={q.id + (showReveal ? (myCorrect ? "-win" : "-lose") : "")}
+            animate={showReveal && !myCorrect ? { x: [0, -10, 10, -6, 6, 0] } : { x: 0 }}
             transition={{ duration: 0.4 }}
             className="relative grid gap-2.5 md:grid-cols-2"
           >
@@ -231,7 +239,7 @@ export default function GamePage() {
               const hidden = s.removedOptions.includes(di);
               let state: "default" | "selected" | "correct" | "wrong" | "dimmed" = "default";
               if (hidden) state = "dimmed";
-              else if (isReveal && trueCorrect !== undefined) {
+              else if (showReveal && trueCorrect !== undefined) {
                 if (trueIdx === trueCorrect) state = "correct";
                 else if (mySub && mySub.choice === trueIdx) state = "wrong";
                 else state = "default";
@@ -251,23 +259,29 @@ export default function GamePage() {
             })}
           </motion.div>
 
-          {isReveal && veilLifted && gain > 0 && (
-            <FlyingGain amount={gain} currency={s.settings.currency} />
-          )}
-
           {!isReveal && !s.myLocked && !meEliminated && !needWager && (
             <LifelineBar left={s.lifelinesLeft} enabled={s.settings.lifelines} onUse={(k) => s.useLifeline(k)} />
           )}
           {!isReveal && s.myLocked && (
-            <p className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-sm">✓ تم قفل إجابتك — بانتظار الآخرين…</p>
+            <p className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-3 text-center text-sm">✓ تم قفل إجابتك — بانتظار الآخرين…</p>
           )}
 
-          {isReveal && (
+          {showReveal && (
             <div className="flex flex-col gap-3">
-              {q.explanation && (
-                <div className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-4 text-[14px] leading-relaxed">
-                  <b>لماذا؟ </b>{q.explanation}
+              {gain > 0 && (
+                <div className="flex min-h-[40px] items-center justify-center">
+                  <FlyingGain amount={gain} currency={s.settings.currency} />
                 </div>
+              )}
+              {q.explanation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-4 text-[14px] leading-relaxed"
+                >
+                  <b>لماذا؟ </b>{q.explanation}
+                </motion.div>
               )}
               <div className="flex items-center justify-end gap-2">
                 {s.isHost ? (
@@ -275,7 +289,7 @@ export default function GamePage() {
                     {s.currentIndex + 1 >= s.order.length ? "النتائج النهائية ←" : "السؤال التالي ←"}
                   </Button>
                 ) : (
-                  <p className="text-[13px] text-white/60">المضيف ينقل إلى السؤال التالي…</p>
+                  <p className="text-[13px] text-[var(--muted)]">المضيف ينقل إلى السؤال التالي…</p>
                 )}
               </div>
             </div>
@@ -305,7 +319,7 @@ export default function GamePage() {
       {/* Mobile drawers */}
       <Dialog open={showLadder} onOpenChange={setShowLadder}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><GameIcon name="cup" size={18} className="text-[var(--accent)]" /> سلّم الجوائز</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><GameIcon name="cup" size={18} className="text-[var(--accent-ink)]" /> سلّم الجوائز</DialogTitle></DialogHeader>
           <PrizeLadder ladder={DEFAULT_PRIZE_LADDER} currentLevel={me?.level ?? -1} markIndex={s.currentIndex} currency={s.settings.currency} compact />
         </DialogContent>
       </Dialog>

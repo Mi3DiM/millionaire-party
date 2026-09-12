@@ -49,7 +49,7 @@ export default function Home() {
 
           {/* Prize visual */}
           <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
-            <Card className="theme-show overflow-hidden border-[var(--accent)]/30 bg-[#0a0c16] text-[#f5f1e4]">
+            <Card className="overflow-hidden border-[var(--accent)]/30">
               <CardContent className="flex flex-col gap-2 p-5">
                 <div className="flex items-center justify-between">
                   <b className="text-sm">سلّم الجوائز</b>
@@ -58,13 +58,13 @@ export default function Home() {
                 {[...DEFAULT_PRIZE_LADDER].reverse().slice(0, 8).map((v, i) => (
                   <div
                     key={v}
-                    className={`prize-num flex justify-between rounded-xl px-3 py-1.5 text-[13px] tabular-nums ${i === 2 ? "anim-glow bg-[var(--accent)] font-black text-[#1a1405]" : "bg-white/5 text-white/70"}`}
+                    className={`prize-num flex justify-between rounded-xl px-3 py-1.5 text-[13px] tabular-nums ${i === 2 ? "anim-glow bg-[var(--accent)] font-black text-[#1a1405]" : "bg-[var(--elevated)] text-[var(--muted)]"}`}
                   >
                     <span>المستوى {15 - i}</span>
                     <span>{formatPrize(v, "دج")}</span>
                   </div>
                 ))}
-                <p className="mt-1 text-center text-[12px] text-white/50">نفس السؤال · نفس المؤقت · كشف متزامن</p>
+                <p className="mt-1 text-center text-[12px] text-[var(--muted)]">نفس السؤال · نفس المؤقت · كشف متزامن</p>
               </CardContent>
             </Card>
           </motion.div>

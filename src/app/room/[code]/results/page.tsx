@@ -37,22 +37,22 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="theme-show flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex min-h-screen flex-col bg-[var(--background)] text-[var(--foreground)]">
       <Header />
       <Confetti fire />
       <PageContainer>
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
           {winner && (
             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}>
-              <Card className="theme-show border-[var(--accent)]/40 bg-[#0a0c16] text-center text-[#f5f1e4]">
+              <Card className="border-[var(--accent)]/40 text-center">
                 <CardContent className="flex flex-col items-center gap-3 p-8">
-                  <GameIcon name="crown" size={52} className="text-[var(--accent)]" />
-                  <p className="text-sm text-white/60">الفائز</p>
+                  <GameIcon name="crown" size={52} className="text-[var(--accent-ink)]" />
+                  <p className="text-sm text-[var(--muted)]">الفائز</p>
                   <div className="flex items-center gap-3">
                     <Avatar name={winner.name} avatarId={winner.avatarId} size={56} />
                     <b className="text-2xl">{winner.name}</b>
                   </div>
-                  <p className="prize-num text-4xl font-black text-[var(--accent)] tabular-nums">
+                  <p className="prize-num text-4xl font-black text-[var(--accent-ink)] tabular-nums">
                     <CountUp value={winner.prize} currency={s.settings.currency} />
                   </p>
                 </CardContent>

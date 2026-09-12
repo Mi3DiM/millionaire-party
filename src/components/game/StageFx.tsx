@@ -74,14 +74,14 @@ export function Halftime({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={meta.ar}>
       <motion.div initial={{ opacity: 0, y: 16, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="w-full max-w-lg">
-        <Card className="theme-show border-[var(--accent)]/40 bg-[#0a0c16] text-[#f5f1e4]">
+        <Card className="border-[var(--accent)]/40">
           <CardContent className="flex max-h-[85vh] flex-col gap-4 overflow-auto p-6">
             <div className="flex flex-col items-center gap-1 text-center">
               <GameIcon name={meta.icon} size={44} />
               <h2 className="text-xl font-black">{locale === "ar" ? meta.ar : meta.en}</h2>
-              <p className="text-[13.5px] text-white/60">{locale === "ar" ? meta.rules : meta.rulesEn}</p>
+              <p className="text-[13.5px] text-[var(--muted)]">{locale === "ar" ? meta.rules : meta.rulesEn}</p>
               {!meQualified && (kind === "semifinal" || kind === "final") && (
-                <p className="mt-1 rounded-xl bg-white/10 px-3 py-1.5 text-[13px] font-bold">
+                <p className="mt-1 rounded-xl bg-[var(--elevated)] px-3 py-1.5 text-[13px] font-bold">
                   {locale === "ar" ? "أنت الآن في الجمهور — شاهد وتشجّع!" : "You are spectating now — enjoy!"}
                 </p>
               )}
@@ -92,7 +92,7 @@ export function Halftime({
                 {locale === "ar" ? `ابدأ ${meta.ar} ←` : `Start ${meta.en}`}
               </Button>
             ) : (
-              <p className="text-center text-[13px] text-white/60">بانتظار المضيف لبدء المرحلة…</p>
+              <p className="text-center text-[13px] text-[var(--muted)]">بانتظار المضيف لبدء المرحلة…</p>
             )}
           </CardContent>
         </Card>
@@ -195,7 +195,7 @@ export function RevealVeil({ onDone }: { onDone: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-black/55 backdrop-blur-[2px]"
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl bg-black/70 backdrop-blur-[3px]"
     >
       <motion.span
         key={n}
