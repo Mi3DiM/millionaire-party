@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { RoomCode } from "@/components/room/RoomCode";
-import { RoomSync } from "@/components/room/RoomSync";
+import { RoomStatus } from "@/components/room/RoomSync";
 import { BankManager } from "@/components/room/BankManager";
 import { useRoom } from "@/lib/game/store";
 import { categoryName, difficultyName } from "@/data/questions";
@@ -79,7 +79,7 @@ export default function LobbyPage() {
 
           {/* Players */}
           <div className="flex flex-col gap-4">
-            <RoomSync />
+            <RoomStatus />
             <Card>
               <CardHeader>
                 <CardTitle>اللاعبون ({s.players.length})</CardTitle>

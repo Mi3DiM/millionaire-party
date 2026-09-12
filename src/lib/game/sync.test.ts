@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useRoom } from "@/lib/game/store";
 import { DEFAULT_SETTINGS, type Question, type QuestionBank } from "@/lib/game/types";
 import type { HostSnapshot } from "@/lib/net/protocol";
@@ -119,6 +119,65 @@ describe("guest sync", () => {
     expect(g.phase).toBe("reveal");
     expect(g.reveal?.correct).toBe(revealed.reveal?.correct);
     expect(g.myLocked).toBe(true);
+  });
+});
+
+describe("snapshot sequence", () => {
+  it("increases monotonically per built snapshot", () => {
+    const a = hostRoom();
+    const b = useRoom.getState().buildHostSnapshot();
+    if (!b) throw new Error("no snapshot");
+    expect(b.seq).toBeGreaterThan(a.seq);
+  });
+});
+
+describe("guest session restore (page reload hatch)", () => {
+  function stubStorage() {
+    const mem: Record<string, string> = {};
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => mem[k] ?? null,
+      setItem: (k: string, v: string) => {
+        mem[k] = String(v);
+      },
+      removeItem: (k: string) => {
+        delete mem[k];
+      },
+    });
+  }
+
+  it("restores the same guest identity so the host re-links instead of duplicating", () => {
+    stubStorage();
+    useRoom.getState().leaveRoom();
+    const settings = { ...DEFAULT_SETTINGS, tournament: false, questionCount: 4, timerSeconds: 20 };
+    const code = useRoom.getState().createRoom({ name: "مضيف", avatarId: "falcon", settings, bank, mode: "p2p" });
+    void code;
+    // Guest joins on "another device" (same store, simulated), then its page reloads.
+    const joinRes = useRoom.getState().joinRoom({ code: useRoom.getState().code ?? "", name: "ضيف", avatarId: "star" });
+    expect(joinRes.ok).toBe(true);
+    // joinRoom on the same code appends locally; grab the guest id for the reload simulation.
+    const guestId = useRoom.getState().meId;
+    // Simulate reload: wipe memory only (storage intact), then restore via route code.
+    const savedCode = useRoom.getState().code ?? "";
+    useRoom.setState({ code: null, meId: null, players: [], isHost: false });
+    const ok = useRoom.getState().restoreGuestSession(savedCode);
+    expect(ok).toBe(true);
+    const g = useRoom.getState();
+    expect(g.meId).toBe(guestId);
+    expect(g.isHost).toBe(false);
+    expect(g.p2pRole).toBe("guest");
+    expect(g.players).toHaveLength(1);
+    vi.unstubAllGlobals();
+  });
+
+  it("refuses restore for a different room code", () => {
+    stubStorage();
+    useRoom.getState().leaveRoom();
+    const settings = { ...DEFAULT_SETTINGS, tournament: false, questionCount: 4, timerSeconds: 20 };
+    useRoom.getState().createRoom({ name: "مضيف", avatarId: "falcon", settings, bank, mode: "p2p" });
+    useRoom.getState().joinRoom({ code: useRoom.getState().code ?? "", name: "ضيف", avatarId: "star" });
+    useRoom.setState({ code: null, meId: null, players: [], isHost: false });
+    expect(useRoom.getState().restoreGuestSession("XXXXX")).toBe(false);
+    vi.unstubAllGlobals();
   });
 });
 

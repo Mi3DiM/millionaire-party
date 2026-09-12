@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GameIcon } from "@/components/ui/GameIcon";
@@ -11,26 +12,38 @@ import { setP2POutbox, useRoom } from "@/lib/game/store";
 
 /**
  * P2P sync bridge (host-authoritative).
- * - Host: broadcasts slim sanitized snapshots, handles hello/ready/answer/wager/bye.
- * - Guest: sends hello (+retries), applies snapshots, sends ready/answer/wager via store outbox.
- * - Resilience: offline grace before removal, re-link by playerId, auto + manual reconnect.
- * Renders a compact connection status banner + a collapsed diagnostics panel.
+ *
+ * - <RoomTransport/> is HEADLESS and must be mounted ONCE per room session
+ *   (see src/app/room/[code]/layout.tsx). It survives lobby<->game<->results
+ *   navigation, so the WebRTC channel is never torn down by route changes
+ *   (simultaneous leave+rejoin on both sides was killing the channel).
+ * - <RoomStatus/> is pure UI (banner + collapsed diagnostics) for pages.
+ *
+ * Resilience: slim snapshots, per-snapshot acks (host detects half-open
+ * links), offline grace before removal, re-link by playerId, auto + manual
+ * soft-rejoin, and a page-reload hatch (fresh peer identity kills ghosts).
  */
 
 // Module-level holders (not React refs) so P2P event callbacks — registered once
-// with useP2P — can always reach the latest senders. Only one RoomSync is
-// mounted at a time (lobby OR game route), so sharing is safe.
+// with useP2P — can always reach the latest senders.
 const senderBox: {
   snapshotTo: null | ((snap: HostSnapshot, peerId: string) => void);
+  sendEvt: null | ((msg: GuestMsg) => void);
   hello: null | (() => void);
-} = { snapshotTo: null, hello: null };
+} = { snapshotTo: null, sendEvt: null, hello: null };
 const peerToPlayer = new Map<string, string>();
 const removalTimers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Host-side last-ack per remote player (half-open link detection). */
+const ackBox = new Map<string, { seq: number; at: number }>();
 const netBox = { lastRejoin: 0 };
+/** UI-triggered transport controls (wired by RoomTransport). */
+const netCtl: { reconnect: () => void } = { reconnect: () => {} };
 
 const STALE_MS = 12000;
+const ACK_DEAD_MS = 10000;
 const REMOVE_GRACE_MS = 30000;
 const REJOIN_COOLDOWN_MS = 20000;
+const RELOAD_AFTER_REJOINS = 2;
 
 function clearRemoval(playerId: string) {
   const t = removalTimers.get(playerId);
@@ -40,40 +53,54 @@ function clearRemoval(playerId: string) {
   }
 }
 
-export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) {
+export function RoomTransport() {
+  const params = useParams<{ code: string }>();
+  const routeCode = (params.code ?? "").toUpperCase();
   const code = useRoom((s) => s.code);
   const isHost = useRoom((s) => s.isHost);
   const mode = useRoom((s) => s.mode);
-  const p2pPeers = useRoom((s) => s.p2pPeers);
-  const p2pLastHostAt = useRoom((s) => s.p2pLastHostAt);
   const setP2p = useRoom((s) => s.setP2p);
-  const [stale, setStale] = React.useState(false);
-  const [showDiag, setShowDiag] = React.useState(false);
-  const [, setDiagTick] = React.useState(0);
+  const p2pStale = useRoom((s) => s.p2pStale);
   // Transport power switch (auto/manual reconnect toggles this off briefly).
   const [netOn, setNetOn] = React.useState(true);
 
   // Guests always try P2P (joinRoom sets role guest). Hosts only in p2p mode.
   const enabled = !!code && netOn && (isHost ? mode === "p2p" : true);
 
+  // Restore guest identity after a page reload (same playerId => host re-links).
+  React.useEffect(() => {
+    if (!useRoom.getState().code && routeCode) {
+      useRoom.getState().restoreGuestSession(routeCode);
+    }
+  }, [routeCode]);
+
   const reconnect = React.useCallback(() => {
     netBox.lastRejoin = Date.now();
+    queueMicrotask(() => {
+      const st = useRoom.getState();
+      st.setP2p({ p2pRejoins: st.p2pRejoins + 1 });
+    });
     setNetOn(false);
     setTimeout(() => setNetOn(true), 800);
   }, []);
+
+  React.useEffect(() => {
+    netCtl.reconnect = reconnect;
+  }, [reconnect]);
 
   const handleSnapshot = React.useCallback((snap: HostSnapshot) => {
     const st = useRoom.getState();
     if (st.isHost) return;
     noteRecv(snapshotBytes(snap));
     st.applySnapshot(snap);
+    if (st.meId) senderBox.sendEvt?.({ kind: "ack", playerId: st.meId, seq: snap.seq });
   }, []);
 
   const handleGuestMsg = React.useCallback((msg: GuestMsg, fromPeer: string) => {
     const st = useRoom.getState();
     if (!st.isHost) return;
     netStats.guestMsgs += 1;
-    if (msg.kind === "hello" || msg.kind === "ready") {
+    if (msg.kind === "hello" || msg.kind === "ready" || msg.kind === "ack") {
       peerToPlayer.set(fromPeer, msg.playerId);
       // Re-link cancels any pending grace-removal.
       clearRemoval(msg.playerId);
@@ -100,6 +127,14 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
       case "wager":
         st.placeRemoteWager(msg.playerId, msg.pct);
         break;
+      case "ack": {
+        ackBox.set(msg.playerId, { seq: msg.seq, at: Date.now() });
+        const cur = useRoom.getState().players.find((p) => p.id === msg.playerId);
+        if (cur && !cur.isHost && cur.connection !== "connected") {
+          st.setRemoteConnection(msg.playerId, "connected");
+        }
+        break;
+      }
       case "bye":
         st.removeRemotePlayer(msg.playerId);
         break;
@@ -115,7 +150,7 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
         if (snap) senderBox.snapshotTo?.(snap, peerId);
       }, 600);
     } else {
-      // Host may have missed our first hello (WebRTC handshake race): re-announce.
+      // Host may have missed our first hello (handshake race): re-announce.
       setTimeout(() => senderBox.hello?.(), 600);
     }
   }, []);
@@ -156,10 +191,12 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
   // Publish senders for the event callbacks above.
   React.useEffect(() => {
     senderBox.snapshotTo = (snap, peerId) => sendSnapshotTo(snap, peerId);
+    senderBox.sendEvt = (msg) => sendToHost(msg);
     return () => {
       senderBox.snapshotTo = null;
+      senderBox.sendEvt = null;
     };
-  }, [sendSnapshotTo]);
+  }, [sendSnapshotTo, sendToHost]);
 
   // Mirror transport state into the store (peers count drives lobby UI).
   React.useEffect(() => {
@@ -187,13 +224,13 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
     hello();
     const t = setInterval(() => {
       const st = useRoom.getState();
-      if (st.p2pLastHostAt == null || stale) hello();
+      if (st.p2pLastHostAt == null || st.p2pStale) hello();
     }, 3000);
     return () => {
       clearInterval(t);
       senderBox.hello = null;
     };
-  }, [enabled, isHost, connected, meId, meName, meAvatar, sendToHost, stale]);
+  }, [enabled, isHost, connected, meId, meName, meAvatar, sendToHost, p2pStale]);
 
   // Host broadcast: on state change + heartbeat every 2.5s.
   const status = useRoom((s) => s.status);
@@ -220,23 +257,46 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
     return () => clearInterval(t);
   }, [enabled, isHost, connected, broadcastSnapshot]);
 
-  // Guest stale-host detection (+ auto-rejoin with cooldown) and host reset.
+  // Host ack watchdog: no ack from an expected player => link (half-)dead.
+  React.useEffect(() => {
+    if (!enabled || !isHost || !connected) return;
+    const t = setInterval(() => {
+      const st = useRoom.getState();
+      if (st.status !== "playing" && st.status !== "reveal" && st.status !== "lobby") return;
+      const now = Date.now();
+      for (const p of st.players) {
+        if (p.isHost || p.isBot) continue;
+        const a = ackBox.get(p.id);
+        const dead = !a || now - a.at > ACK_DEAD_MS;
+        if (dead && p.connection !== "offline") st.setRemoteConnection(p.id, "offline");
+        else if (!dead && p.connection === "offline") st.setRemoteConnection(p.id, "connected");
+      }
+    }, 2000);
+    return () => clearInterval(t);
+  }, [enabled, isHost, connected]);
+
+  // Guest stale-host detection (+ auto soft-rejoin with cooldown).
   React.useEffect(() => {
     if (isHost || !connected) {
-      if (stale) queueMicrotask(() => setStale(false));
+      queueMicrotask(() => {
+        const cur = useRoom.getState();
+        if (cur.p2pStale || cur.p2pRejoins > 0) cur.setP2p({ p2pStale: false, p2pRejoins: 0 });
+      });
       return;
     }
     const t = setInterval(() => {
       const last = useRoom.getState().p2pLastHostAt;
       const isStale = last != null && Date.now() - last > STALE_MS;
-      queueMicrotask(() => setStale(isStale));
+      queueMicrotask(() => {
+        const cur = useRoom.getState();
+        if (cur.p2pStale !== isStale) cur.setP2p({ p2pStale: isStale });
+        if (!isStale && cur.p2pRejoins > 0) cur.setP2p({ p2pRejoins: 0 });
+      });
       if (isStale && Date.now() - netBox.lastRejoin > REJOIN_COOLDOWN_MS) {
-        netBox.lastRejoin = Date.now();
         queueMicrotask(() => reconnect());
       }
     }, 2000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost, connected, reconnect]);
 
   // Keep the screen awake while a shared game runs (mobile power-save kills P2P).
@@ -272,14 +332,79 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
     };
   }, [enabled, status]);
 
+  return null;
+}
+
+function ageStr(t: number | null, now: number): string {
+  if (t == null) return "—";
+  const s = Math.max(0, Math.round((now - t) / 1000));
+  return s < 60 ? `${s} ث` : `${Math.floor(s / 60)} د`;
+}
+
+function DiagPanel({ peers, connected, stale, now }: { peers: number; connected: boolean; stale: boolean; now: number }) {
+  const s = useRoom();
+  let worstAck: number | null = null;
+  if (s.isHost) {
+    for (const p of s.players) {
+      if (p.isHost || p.isBot) continue;
+      const a = ackBox.get(p.id);
+      const age = a ? now - a.at : null;
+      if (age == null) {
+        worstAck = null;
+        break;
+      }
+      worstAck = worstAck == null ? age : Math.max(worstAck, age);
+    }
+  }
+  return (
+    <div dir="rtl" className="rounded-2xl border border-dashed border-[var(--border)] p-3 text-[11.5px] leading-relaxed text-[var(--muted)]">
+      <b className="text-[var(--foreground)]">تشخيص P2P</b> (للدعم الفني — انسخ هذه القيم عند الإبلاغ)
+      <div className="mt-1 grid grid-cols-2 gap-x-4">
+        <span>الدور: {s.isHost ? "مضيف" : "ضيف"}</span>
+        <span>النقل: {connected ? "مفتوح" : "مغلق"}</span>
+        <span>الأقران: {peers}</span>
+        <span>الحالة: {s.status} / {s.phase}</span>
+        <span>لقطات مرسلة: {netStats.sentSnap} (قبل {ageStr(netStats.sentAt, now)} · {netStats.sentBytes} بايت)</span>
+        <span>لقطات مستلمة: {netStats.recvSnap} (قبل {ageStr(netStats.recvAt, now)} · {netStats.recvBytes} بايت)</span>
+        <span>رسائل الضيوف: {netStats.guestMsgs}</span>
+        <span>لاعبون: {s.players.length} · سؤال {s.currentIndex + 1}/{Math.max(s.order.length, 1)}</span>
+        <span>آخر لقطة مضيف: {ageStr(s.p2pLastHostAt, now)}</span>
+        <span>متجمد: {stale ? "نعم" : "لا"}</span>
+        {s.isHost && <span>أقدم إقرار: {worstAck == null ? "لا يوجد" : `${Math.round(worstAck / 1000)} ث`}</span>}
+        {!s.isHost && <span>محاولات إعادة: {s.p2pRejoins}</span>}
+      </div>
+      {netStats.lastError && <p className="mt-1 text-[var(--danger)]">آخر خطأ: {netStats.lastError}</p>}
+    </div>
+  );
+}
+
+export function RoomStatus({ variant = "lobby" }: { variant?: "lobby" | "game" }) {
+  const isHost = useRoom((s) => s.isHost);
+  const mode = useRoom((s) => s.mode);
+  const code = useRoom((s) => s.code);
+  const p2pConnected = useRoom((s) => s.p2pConnected);
+  const p2pPeers = useRoom((s) => s.p2pPeers);
+  const p2pLastHostAt = useRoom((s) => s.p2pLastHostAt);
+  const p2pStale = useRoom((s) => s.p2pStale);
+  const p2pRejoins = useRoom((s) => s.p2pRejoins);
+  const [showDiag, setShowDiag] = React.useState(false);
+  const [diagNow, setDiagNow] = React.useState(0);
+
   // Diagnostics ticker (only while the panel is open).
   React.useEffect(() => {
     if (!showDiag) return;
-    const t = setInterval(() => setDiagTick((x) => x + 1), 1000);
+    const t = setInterval(() => setDiagNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [showDiag]);
 
-  if (!enabled) return null;
+  const visible = !!code && (isHost ? mode === "p2p" : true);
+  if (!visible) return null;
+
+  const reloadPage = () => {
+    try {
+      window.location.reload();
+    } catch {}
+  };
 
   const diag = (
     <div className="flex flex-col gap-1">
@@ -290,14 +415,33 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
       >
         {showDiag ? "إخفاء التشخيص" : "تشخيص الاتصال"}
       </button>
-      {showDiag && <DiagPanel peers={peers.length} connected={connected && netOn} stale={stale} />}
+      {showDiag && <DiagPanel peers={p2pPeers} connected={p2pConnected} stale={p2pStale} now={diagNow} />}
+    </div>
+  );
+
+  const staleBox = (where: string) => (
+    <div className="flex flex-col gap-2" key={where}>
+      <div className="rounded-2xl border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-center text-[13px]">
+        <p>انقطع الاتصال بالمضيف — اللعبة مجمّدة بانتظار عودته. لا تغلق الصفحة.</p>
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <Button size="sm" variant="secondary" onClick={() => netCtl.reconnect()}>
+            إعادة الاتصال الآن
+          </Button>
+          {p2pRejoins >= RELOAD_AFTER_REJOINS && (
+            <Button size="sm" variant="gold" onClick={reloadPage}>
+              تحديث الصفحة والعودة تلقائياً
+            </Button>
+          )}
+        </div>
+      </div>
+      {diag}
     </div>
   );
 
   // Game view: only warn, stay quiet when healthy.
   if (variant === "game") {
     if (isHost) return diag;
-    if (!connected || !netOn) {
+    if (!p2pConnected) {
       return (
         <div className="flex flex-col gap-2">
           <p className="rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning)]/10 p-3 text-center text-[13px]">
@@ -307,19 +451,7 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
         </div>
       );
     }
-    if (stale) {
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="rounded-2xl border border-[var(--danger)]/40 bg-[var(--danger)]/10 p-3 text-center text-[13px]">
-            <p>انقطع الاتصال بالمضيف — اللعبة مجمّدة بانتظار عودته. لا تغلق الصفحة.</p>
-            <Button size="sm" variant="secondary" className="mt-2" onClick={reconnect}>
-              إعادة الاتصال الآن
-            </Button>
-          </div>
-          {diag}
-        </div>
-      );
-    }
+    if (p2pStale) return staleBox("game");
     return diag;
   }
 
@@ -328,8 +460,8 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
     <div className="flex flex-col gap-2">
       {isHost ? (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--elevated)] px-3 py-2 text-[12.5px]">
-          <span className={`inline-block h-2 w-2 rounded-full ${connected ? "bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
-          {!connected ? (
+          <span className={`inline-block h-2 w-2 rounded-full ${p2pConnected ? "bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
+          {!p2pConnected ? (
             <span>جارٍ فتح قناة P2P… شارك الرمز بعد الاتصال.</span>
           ) : p2pPeers === 0 ? (
             <span>القناة مفتوحة — بانتظار انضمام اللاعبين من أجهزتهم.</span>
@@ -339,7 +471,7 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
             </Badge>
           )}
         </div>
-      ) : !connected || !netOn ? (
+      ) : !p2pConnected ? (
         <div className="flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--elevated)] px-3 py-2 text-[12.5px]">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" aria-hidden />
           جارٍ الاتصال بالمضيف…
@@ -349,13 +481,8 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" aria-hidden />
           متصل بالقناة… بانتظار المضيف. تأكد أن المضيف فتح نفس الرمز على جهازه.
         </div>
-      ) : stale ? (
-        <div className="rounded-2xl border border-[var(--danger)]/40 bg-[var(--danger)]/10 px-3 py-2 text-center text-[12.5px]">
-          <p>انقطع الاتصال بالمضيف — بانتظار عودته. لا تغلق الصفحة.</p>
-          <Button size="sm" variant="secondary" className="mt-2" onClick={reconnect}>
-            إعادة الاتصال الآن
-          </Button>
-        </div>
+      ) : p2pStale ? (
+        staleBox("lobby")
       ) : (
         <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[12.5px]">
           <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
@@ -363,34 +490,6 @@ export function RoomSync({ variant = "lobby" }: { variant?: "lobby" | "game" }) 
         </div>
       )}
       {diag}
-    </div>
-  );
-}
-
-function ageStr(t: number | null): string {
-  if (t == null) return "—";
-  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
-  return s < 60 ? `${s} ث` : `${Math.floor(s / 60)} د`;
-}
-
-function DiagPanel({ peers, connected, stale }: { peers: number; connected: boolean; stale: boolean }) {
-  const s = useRoom();
-  return (
-    <div dir="rtl" className="rounded-2xl border border-dashed border-[var(--border)] p-3 text-[11.5px] leading-relaxed text-[var(--muted)]">
-      <b className="text-[var(--foreground)]">تشخيص P2P</b> (للدعم الفني — انسخ هذه القيم عند الإبلاغ)
-      <div className="mt-1 grid grid-cols-2 gap-x-4">
-        <span>الدور: {s.isHost ? "مضيف" : "ضيف"}</span>
-        <span>النقل: {connected ? "مفتوح" : "مغلق"}</span>
-        <span>الأقران: {peers}</span>
-        <span>الحالة: {s.status} / {s.phase}</span>
-        <span>لقطات مرسلة: {netStats.sentSnap} (قبل {ageStr(netStats.sentAt)} · {netStats.sentBytes} بايت)</span>
-        <span>لقطات مستلمة: {netStats.recvSnap} (قبل {ageStr(netStats.recvAt)} · {netStats.recvBytes} بايت)</span>
-        <span>رسائل الضيوف: {netStats.guestMsgs}</span>
-        <span>لاعبون: {s.players.length} · سؤال {s.currentIndex + 1}/{Math.max(s.order.length, 1)}</span>
-        <span>آخر لقطة مضيف: {ageStr(s.p2pLastHostAt)}</span>
-        <span>متجمد: {stale ? "نعم" : "لا"}</span>
-      </div>
-      {netStats.lastError && <p className="mt-1 text-[var(--danger)]">آخر خطأ: {netStats.lastError}</p>}
     </div>
   );
 }

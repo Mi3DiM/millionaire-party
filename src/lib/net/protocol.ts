@@ -44,7 +44,14 @@ export interface ByeMsg {
   playerId: string;
 }
 
-export type GuestMsg = HelloMsg | ReadyMsg | AnswerMsg | WagerMsg | ByeMsg;
+/** Per-snapshot acknowledgment (lets the host detect half-open links fast). */
+export interface AckMsg {
+  kind: "ack";
+  playerId: string;
+  seq: number;
+}
+
+export type GuestMsg = HelloMsg | ReadyMsg | AnswerMsg | WagerMsg | ByeMsg | AckMsg;
 
 /** Question as guests are allowed to see it (no correct answer, no explanation). */
 export interface PublicQuestion {
@@ -98,6 +105,8 @@ export function fromPublicPlayer(p: PublicPlayer): Player {
 
 export interface HostSnapshot {
   v: 1;
+  /** Monotonic per-room sequence (drives guest acks + stale detection). */
+  seq: number;
   code: string;
   status: RoomStatus;
   settings: RoomSettings;

@@ -16,7 +16,7 @@ import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
 import { Halftime, RevealVeil, FlyingGain } from "@/components/game/StageFx";
 import { MatchStatusBar } from "@/components/game/MatchStatusBar";
-import { RoomSync } from "@/components/room/RoomSync";
+import { RoomStatus } from "@/components/room/RoomSync";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
 import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
@@ -173,7 +173,7 @@ export default function GamePage() {
 
         {/* Center */}
         <main className="flex min-w-0 flex-col gap-4">
-          <RoomSync variant="game" />
+          <RoomStatus variant="game" />
           <MatchStatusBar
             prize={me?.prize ?? 0}
             fromPrize={s.myPrizeAtStart}

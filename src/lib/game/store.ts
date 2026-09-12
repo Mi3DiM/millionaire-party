@@ -35,6 +35,8 @@ export type P2PRole = "idle" | "host" | "guest";
 
 /** Outbox set by RoomSync: guest -> host messages. Module-level to avoid storing fns in state. */
 let p2pOutbox: ((msg: GuestMsg) => void) | null = null;
+/** Monotonic host snapshot sequence (reset per room; drives guest acks). */
+let hostSeq = 0;
 export function setP2POutbox(fn: ((msg: GuestMsg) => void) | null) {
   p2pOutbox = fn;
 }
@@ -77,6 +79,8 @@ interface RoomState {
   p2pConnected: boolean;
   p2pPeers: number;
   p2pLastHostAt: number | null; // guest: last snapshot epoch ms
+  p2pStale: boolean; // guest: no snapshot beyond STALE_MS
+  p2pRejoins: number; // guest: soft-rejoin attempts this stale episode
   hostBankName: string | null; // guest: bank name announced by host
 
   // actions
@@ -99,7 +103,9 @@ interface RoomState {
   resetToLobby: () => void;
   leaveRoom: () => void;
   // P2P actions
-  setP2p: (patch: Partial<Pick<RoomState, "p2pConnected" | "p2pPeers" | "p2pLastHostAt" | "connectionNote">>) => void;
+  setP2p: (patch: Partial<Pick<RoomState, "p2pConnected" | "p2pPeers" | "p2pLastHostAt" | "p2pStale" | "p2pRejoins" | "connectionNote">>) => void;
+  /** Guest-only: restore identity after a page reload (same playerId, so the host re-links). */
+  restoreGuestSession: (routeCode: string) => boolean;
   registerRemotePlayer: (opts: { playerId: string; name: string; avatarId: string }) => void;
   setRemoteReady: (playerId: string, ready: boolean) => void;
   setRemoteConnection: (playerId: string, connection: Player["connection"]) => void;
@@ -162,10 +168,13 @@ export const useRoom = create<RoomState>((set, get) => ({
   p2pConnected: false,
   p2pPeers: 0,
   p2pLastHostAt: null,
+  p2pStale: false,
+  p2pRejoins: 0,
   hostBankName: null,
 
   createRoom: ({ name, avatarId, settings, bank, mode }) => {
     const code = genCode();
+    hostSeq = 0;
     const me: Player = freshPlayer(name, avatarId, true);
     set({
       code,
@@ -182,9 +191,11 @@ export const useRoom = create<RoomState>((set, get) => ({
       p2pConnected: false,
       p2pPeers: 0,
       p2pLastHostAt: null,
+      p2pStale: false,
+      p2pRejoins: 0,
       hostBankName: null,
     });
-    persistMeta(code, me.id, true);
+    persistMeta(code, me.id, true, name, avatarId);
     return code;
   },
 
@@ -199,7 +210,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       if (existing.players.length >= existing.settings.maxPlayers) return { ok: false, error: "الغرفة ممتلئة" };
       if (existing.status !== "lobby") return { ok: false, error: "اللعبة بدأت بالفعل" };
       set({ meId: me.id, isHost: false, players: [...existing.players, me] });
-      persistMeta(clean, me.id, false);
+      persistMeta(clean, me.id, false, name, avatarId);
       return { ok: true };
     }
     set({
@@ -213,6 +224,8 @@ export const useRoom = create<RoomState>((set, get) => ({
       p2pConnected: false,
       p2pPeers: 0,
       p2pLastHostAt: null,
+      p2pStale: false,
+      p2pRejoins: 0,
       hostBankName: null,
       order: [],
       stages: [],
@@ -224,7 +237,7 @@ export const useRoom = create<RoomState>((set, get) => ({
       reveal: null,
       connectionNote: "بانتظار المضيف… تأكد أن المضيف فتح نفس الرمز على جهازه",
     });
-    persistMeta(clean, me.id, false);
+    persistMeta(clean, me.id, false, name, avatarId);
     return { ok: true };
   },
 
@@ -579,6 +592,7 @@ export const useRoom = create<RoomState>((set, get) => ({
     const meId = get().meId;
     if (meId && get().p2pRole === "guest") sendToHost({ kind: "bye", playerId: meId });
     setP2POutbox(null);
+    hostSeq = 0;
     set({
       code: null,
       isHost: false,
@@ -594,11 +608,57 @@ export const useRoom = create<RoomState>((set, get) => ({
       p2pConnected: false,
       p2pPeers: 0,
       p2pLastHostAt: null,
+      p2pStale: false,
+      p2pRejoins: 0,
       hostBankName: null,
     });
   },
 
   setP2p: (patch) => set(patch),
+
+  restoreGuestSession: (routeCode) => {
+    const s = get();
+    if (s.code) return true; // already in a room
+    let saved: { code?: string; meId?: string; isHost?: boolean; name?: string; avatarId?: string } | null = null;
+    try {
+      const raw = localStorage.getItem("millionaire:room");
+      if (raw) saved = JSON.parse(raw);
+    } catch {
+      return false;
+    }
+    if (!saved || saved.isHost !== false || !saved.code || !saved.meId || !saved.name) return false;
+    if (saved.code !== routeCode.trim().toUpperCase()) return false;
+    const me: Player = {
+      ...freshPlayer(saved.name, saved.avatarId ?? "star", false),
+      id: saved.meId,
+      ready: false,
+    };
+    set({
+      code: saved.code,
+      isHost: false,
+      meId: me.id,
+      status: "lobby",
+      players: [me],
+      mode: "p2p",
+      p2pRole: "guest",
+      p2pConnected: false,
+      p2pPeers: 0,
+      p2pLastHostAt: null,
+      p2pStale: false,
+      p2pRejoins: 0,
+      hostBankName: null,
+      order: [],
+      stages: [],
+      awaitingStage: false,
+      wagers: {},
+      myChoice: null,
+      myLocked: false,
+      submissions: [],
+      reveal: null,
+      connectionNote: "إعادة اتصال… بانتظار المضيف",
+    });
+    return true;
+  },
 
   registerRemotePlayer: ({ playerId, name, avatarId }) => {
     const s = get();
@@ -739,6 +799,7 @@ export const useRoom = create<RoomState>((set, get) => ({
     const q = s.order[s.currentIndex];
     return {
       v: 1 as const,
+      seq: ++hostSeq,
       code: s.code,
       status: s.status,
       settings: s.settings,
@@ -806,9 +867,9 @@ function genCode(): string {
   return c;
 }
 
-function persistMeta(code: string, meId: string, isHost: boolean) {
+function persistMeta(code: string, meId: string, isHost: boolean, name?: string, avatarId?: string) {
   try {
-    localStorage.setItem("millionaire:room", JSON.stringify({ code, meId, isHost }));
+    localStorage.setItem("millionaire:room", JSON.stringify({ code, meId, isHost, name, avatarId }));
   } catch {}
 }
 

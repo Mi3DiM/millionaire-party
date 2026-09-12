@@ -147,5 +147,5 @@ function isSnapshot(v: unknown): v is HostSnapshot {
 function isGuestMsg(v: unknown): v is GuestMsg {
   if (!v || typeof v !== "object") return false;
   const k = (v as Record<string, unknown>).kind;
-  return k === "hello" || k === "ready" || k === "answer" || k === "wager" || k === "bye";
+  return k === "hello" || k === "ready" || k === "answer" || k === "wager" || k === "bye" || k === "ack";
 }
