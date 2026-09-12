@@ -12,9 +12,24 @@ import { formatPrize } from "@/lib/utils";
 import { useI18n } from "@/i18n/provider";
 import { sfx } from "@/lib/fx/audio";
 
-export function StageBanner({ kind, index, total }: { kind: StageKind; index: number; total: number }) {
+export function StageBanner({ kind, index, total, compact }: { kind: StageKind; index: number; total: number; compact?: boolean }) {
   const { locale } = useI18n();
   const meta = STAGE_META[kind];
+  if (compact) {
+    return (
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-[#1a1405]">
+          <GameIcon name={meta.icon} size={22} />
+        </span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <b className="block truncate text-[14px]">{locale === "ar" ? meta.ar : meta.en}</b>
+          <span className="prize-num text-[11.5px] text-[var(--muted)] tabular-nums">
+            {locale === "ar" ? `سؤال ${index + 1} / ${total}` : `Q ${index + 1} / ${total}`}
+          </span>
+        </div>
+      </div>
+    );
+  }
   return (
     <motion.div
       key={kind}

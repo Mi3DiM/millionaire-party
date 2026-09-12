@@ -14,8 +14,8 @@ import { PrizeLadder } from "@/components/game/PrizeLadder";
 import { Leaderboard } from "@/components/game/Leaderboard";
 import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
-import { StageBanner, Halftime, WagerDialog, RevealVeil, FlyingGain } from "@/components/game/StageFx";
-import { BalanceHud } from "@/components/game/BalanceHud";
+import { Halftime, WagerDialog, RevealVeil, FlyingGain } from "@/components/game/StageFx";
+import { MatchStatusBar } from "@/components/game/MatchStatusBar";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
 import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
@@ -166,7 +166,7 @@ export default function GamePage() {
 
         {/* Center */}
         <main className="flex min-w-0 flex-col gap-4">
-          <BalanceHud
+          <MatchStatusBar
             prize={me?.prize ?? 0}
             fromPrize={s.myPrizeAtStart}
             currency={s.settings.currency}
@@ -176,10 +176,13 @@ export default function GamePage() {
             level={me?.level ?? -1}
             wagerPct={kind === "wager" ? myWager : undefined}
             wentUp={wentUp}
+            stageKind={kind}
+            questionIndex={s.currentIndex}
+            questionTotal={s.order.length}
+            showTournament={s.settings.tournament && s.stages.length > 1}
+            speed={kind === "speed" && !isReveal}
+            streak={me?.streak ?? 0}
           />
-          {s.settings.tournament && s.stages.length > 1 && (
-            <StageBanner kind={kind} index={s.currentIndex} total={s.order.length} />
-          )}
           <div className="flex items-center justify-between gap-3">
             {!isReveal ? (
               <Timer key={q.id + String(s.questionStartedAt)} endsAt={s.questionEndsAt} startedAt={s.questionStartedAt} onExpire={onExpire} onSecond={onSecond} />
@@ -188,15 +191,9 @@ export default function GamePage() {
                 {mySub?.choice === null ? (locale === "ar" ? "انتهى الوقت" : "Time out") : myCorrect ? (locale === "ar" ? "إجابة صحيحة ✓" : "Correct ✓") : (locale === "ar" ? "إجابة خاطئة ✕" : "Wrong ✕")}
               </Badge>
             )}
-            <div className="flex items-center gap-2">
-              {kind === "speed" && !isReveal && <Badge variant="gold"><GameIcon name="bolt" size={14} /> ×2</Badge>}
-              {(me?.streak ?? 0) >= 2 && (
-                <Badge variant="gold"><GameIcon name="fire" size={14} /> ×{me!.streak} سلسلة</Badge>
-              )}
-              <div className="flex gap-2 lg:hidden">
-                <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
-                <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
-              </div>
+            <div className="flex gap-2 lg:hidden">
+              <Button size="sm" variant="secondary" onClick={() => setShowLadder(true)}>الجوائز</Button>
+              <Button size="sm" variant="secondary" onClick={() => setShowRanks(true)}>الترتيب</Button>
             </div>
           </div>
 
