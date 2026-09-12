@@ -16,6 +16,7 @@ import { QuestionCard, AnswerOption } from "@/components/game/QuestionCard";
 import { LifelineBar } from "@/components/game/LifelineBar";
 import { Halftime, RevealVeil, FlyingGain } from "@/components/game/StageFx";
 import { MatchStatusBar } from "@/components/game/MatchStatusBar";
+import { RoomSync } from "@/components/room/RoomSync";
 import { useRoom, currentStageKind } from "@/lib/game/store";
 import { rankPlayers } from "@/lib/game/engine";
 import { DEFAULT_PRIZE_LADDER, STAGE_META } from "@/lib/game/types";
@@ -74,6 +75,8 @@ export default function GamePage() {
 
   // Reveal feedback: sfx + haptics + rank-change chime.
   const me = s.players.find((p) => p.id === s.meId);
+  // Guests never receive correctAnswer pre-reveal, so lifelines stay host-only.
+  const isP2PGuest = !s.isHost && s.p2pRole === "guest";
   const mySub = s.reveal?.submissions.find((x) => x.playerId === s.meId);
   const isReveal = s.phase === "reveal";
   const myRank = React.useMemo(() => {
@@ -170,6 +173,7 @@ export default function GamePage() {
 
         {/* Center */}
         <main className="flex min-w-0 flex-col gap-4">
+          <RoomSync variant="game" />
           <MatchStatusBar
             prize={me?.prize ?? 0}
             fromPrize={s.myPrizeAtStart}
@@ -259,8 +263,13 @@ export default function GamePage() {
             })}
           </motion.div>
 
-          {!isReveal && !s.myLocked && !meEliminated && !needWager && (
+          {!isReveal && !s.myLocked && !meEliminated && !needWager && !isP2PGuest && (
             <LifelineBar left={s.lifelinesLeft} enabled={s.settings.lifelines} onUse={(k) => s.useLifeline(k)} />
+          )}
+          {!isReveal && !s.myLocked && !meEliminated && !needWager && isP2PGuest && (
+            <p className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-3 text-center text-[12.5px] text-[var(--muted)]">
+              وسائل المساعدة للمضيف فقط في الغرف المشتركة (لعدالة الكشف).
+            </p>
           )}
           {!isReveal && s.myLocked && (
             <p className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-3 text-center text-sm">✓ تم قفل إجابتك — بانتظار الآخرين…</p>

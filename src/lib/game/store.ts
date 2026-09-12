@@ -23,8 +23,26 @@ import {
   stageTotal,
 } from "@/lib/game/engine";
 import { uid } from "@/lib/utils";
+import {
+  fromPublicPlayer,
+  toPublicPlayer,
+  type GuestMsg,
+  type HostSnapshot,
+} from "@/lib/net/protocol";
 
 export type ConnectionMode = "local" | "p2p";
+export type P2PRole = "idle" | "host" | "guest";
+
+/** Outbox set by RoomSync: guest -> host messages. Module-level to avoid storing fns in state. */
+let p2pOutbox: ((msg: GuestMsg) => void) | null = null;
+export function setP2POutbox(fn: ((msg: GuestMsg) => void) | null) {
+  p2pOutbox = fn;
+}
+function sendToHost(msg: GuestMsg) {
+  try {
+    p2pOutbox?.(msg);
+  } catch {}
+}
 
 interface RoomState {
   code: string | null;
@@ -54,6 +72,12 @@ interface RoomState {
   wagers: Record<string, number>; // playerId -> pct for current wager question
   myPrizeAtStart: number; // my prize when the current question began (for FlyingGain delta)
   myLevelAtStart: number;
+  // ---- P2P sync (host-authoritative) ----
+  p2pRole: P2PRole;
+  p2pConnected: boolean;
+  p2pPeers: number;
+  p2pLastHostAt: number | null; // guest: last snapshot epoch ms
+  hostBankName: string | null; // guest: bank name announced by host
 
   // actions
   createRoom: (opts: { name: string; avatarId: string; settings: RoomSettings; bank: QuestionBank; mode: ConnectionMode }) => string;
@@ -74,6 +98,15 @@ interface RoomState {
   useLifeline: (kind: LifelineKind) => void;
   resetToLobby: () => void;
   leaveRoom: () => void;
+  // P2P actions
+  setP2p: (patch: Partial<Pick<RoomState, "p2pConnected" | "p2pPeers" | "p2pLastHostAt" | "connectionNote">>) => void;
+  registerRemotePlayer: (opts: { playerId: string; name: string; avatarId: string }) => void;
+  setRemoteReady: (playerId: string, ready: boolean) => void;
+  removeRemotePlayer: (playerId: string) => void;
+  submitRemoteAnswer: (opts: { playerId: string; questionId: string; choice: number | null }) => void;
+  placeRemoteWager: (playerId: string, pct: 25 | 50 | 100) => void;
+  applySnapshot: (snap: HostSnapshot) => void;
+  buildHostSnapshot: () => HostSnapshot | null;
 }
 
 export function currentStageKind(s: Pick<RoomState, "stages" | "currentIndex">): StageKind {
@@ -124,6 +157,11 @@ export const useRoom = create<RoomState>((set, get) => ({
   wagers: {},
   myPrizeAtStart: 0,
       myLevelAtStart: -1,
+  p2pRole: "idle",
+  p2pConnected: false,
+  p2pPeers: 0,
+  p2pLastHostAt: null,
+  hostBankName: null,
 
   createRoom: ({ name, avatarId, settings, bank, mode }) => {
     const code = genCode();
@@ -139,6 +177,11 @@ export const useRoom = create<RoomState>((set, get) => ({
       order: [],
       mode,
       connectionNote: mode === "p2p" ? "P2P: شارك الرمز لينضم الآخرون من أجهزتهم" : "وضع محلي: أضف لاعبين افتراضيين للتجربة",
+      p2pRole: mode === "p2p" ? "host" : "idle",
+      p2pConnected: false,
+      p2pPeers: 0,
+      p2pLastHostAt: null,
+      hostBankName: null,
     });
     persistMeta(code, me.id, true);
     return code;
@@ -164,7 +207,21 @@ export const useRoom = create<RoomState>((set, get) => ({
       meId: me.id,
       status: "lobby",
       players: [me],
-      connectionNote: "بانتظار المضيف… شارك الرمز مع صاحب الغرفة",
+      mode: "p2p",
+      p2pRole: "guest",
+      p2pConnected: false,
+      p2pPeers: 0,
+      p2pLastHostAt: null,
+      hostBankName: null,
+      order: [],
+      stages: [],
+      awaitingStage: false,
+      wagers: {},
+      myChoice: null,
+      myLocked: false,
+      submissions: [],
+      reveal: null,
+      connectionNote: "بانتظار المضيف… تأكد أن المضيف فتح نفس الرمز على جهازه",
     });
     persistMeta(clean, me.id, false);
     return { ok: true };
@@ -184,8 +241,15 @@ export const useRoom = create<RoomState>((set, get) => ({
   },
 
   toggleReady: () => {
-    const { players, meId } = get();
-    set({ players: players.map((p) => (p.id === meId ? { ...p, ready: !p.ready } : p)) });
+    const { players, meId, isHost, p2pRole } = get();
+    const me = players.find((p) => p.id === meId);
+    if (!me) return;
+    const next = !me.ready;
+    set({ players: players.map((p) => (p.id === meId ? { ...p, ready: next } : p)) });
+    // Guest in a shared room: notify the host (authoritative state comes back via snapshot).
+    if (!isHost && p2pRole === "guest" && meId) {
+      sendToHost({ kind: "ready", playerId: meId, ready: next });
+    }
   },
 
   toggleLock: () => {
@@ -212,7 +276,8 @@ export const useRoom = create<RoomState>((set, get) => ({
   },
 
   startGame: () => {
-    const { bank, settings, players } = get();
+    const { bank, settings, players, isHost } = get();
+    if (!isHost) return;
     if (!bank || bank.questions.length === 0) return;
     let pool = bank.questions;
     if (!settings.categories.includes("mixed")) {
@@ -262,6 +327,16 @@ export const useRoom = create<RoomState>((set, get) => ({
     const q = s.order[s.currentIndex];
     if (!q) return;
     const trueChoice = s.answerOrder[displayIndex];
+    // Guest in a shared room: send to host, lock UI optimistically, wait for host snapshot.
+    if (!s.isHost && s.p2pRole === "guest") {
+      sendToHost({ kind: "answer", playerId: s.meId!, questionId: q.id, choice: trueChoice });
+      set({
+        myChoice: displayIndex,
+        myLocked: true,
+        players: s.players.map((p) => (p.id === s.meId ? { ...p, status: "answered" as const } : p)),
+      });
+      return;
+    }
     const now = Date.now();
     const sub: AnswerSubmission = {
       playerId: s.meId!,
@@ -282,6 +357,16 @@ export const useRoom = create<RoomState>((set, get) => ({
   tickTimeout: () => {
     const s = get();
     if (s.status !== "playing" || s.phase !== "question" || s.awaitingStage) return;
+    // Guest: report timeout to host, never reveal locally.
+    if (!s.isHost && s.p2pRole === "guest") {
+      if (!s.myLocked && s.meId) {
+        const q = s.order[s.currentIndex];
+        if (q) sendToHost({ kind: "answer", playerId: s.meId, questionId: q.id, choice: null });
+        set({ myChoice: null, myLocked: true });
+      }
+      return;
+    }
+    if (!s.isHost) return;
     // Record timeout for me if not answered.
     const me = s.players.find((p) => p.id === s.meId);
     if (!s.myLocked && s.meId && me && !me.eliminated) {
@@ -302,6 +387,7 @@ export const useRoom = create<RoomState>((set, get) => ({
 
   revealNow: () => {
     const s = get();
+    if (!s.isHost) return;
     if (s.status !== "playing" || s.phase !== "question") return;
     const q = s.order[s.currentIndex];
     if (!q) return;
@@ -341,6 +427,7 @@ export const useRoom = create<RoomState>((set, get) => ({
 
   nextQuestion: () => {
     const s = get();
+    if (!s.isHost) return;
     if (s.currentIndex + 1 >= s.order.length) {
       set({ status: "finished" });
       return;
@@ -431,11 +518,19 @@ export const useRoom = create<RoomState>((set, get) => ({
     if (s.phase !== "question" || currentStageKind(s) !== "wager" || s.myLocked) return;
     const me = s.players.find((p) => p.id === s.meId);
     if (!me || me.eliminated) return;
+    if (!s.isHost && s.p2pRole === "guest") {
+      sendToHost({ kind: "wager", playerId: s.meId!, pct });
+      set({ wagers: { ...s.wagers, [s.meId!]: pct } });
+      return;
+    }
     set({ wagers: { ...s.wagers, [s.meId!]: pct } });
   },
 
   useLifeline: (kind) => {
     const s = get();
+    // Lifelines need the true answer which guests never receive pre-reveal (fairness).
+    // Guests in shared rooms: lifelines disabled for now (host-only).
+    if (!s.isHost && s.p2pRole === "guest") return;
     if (s.phase !== "question" || s.myLocked) return;
     if (!s.settings.lifelines[kind === "extra" ? "extraTime" : kind === "fifty" ? "fifty" : "crowd"]) return;
     if (s.lifelinesLeft[kind] <= 0) return;
@@ -480,6 +575,9 @@ export const useRoom = create<RoomState>((set, get) => ({
     try {
       localStorage.removeItem("millionaire:room");
     } catch {}
+    const meId = get().meId;
+    if (meId && get().p2pRole === "guest") sendToHost({ kind: "bye", playerId: meId });
+    setP2POutbox(null);
     set({
       code: null,
       isHost: false,
@@ -491,7 +589,148 @@ export const useRoom = create<RoomState>((set, get) => ({
       submissions: [],
       myPrizeAtStart: 0,
       myLevelAtStart: -1,
+      p2pRole: "idle",
+      p2pConnected: false,
+      p2pPeers: 0,
+      p2pLastHostAt: null,
+      hostBankName: null,
     });
+  },
+
+  setP2p: (patch) => set(patch),
+
+  registerRemotePlayer: ({ playerId, name, avatarId }) => {
+    const s = get();
+    if (!s.isHost || s.status !== "lobby") return;
+    if (s.players.some((p) => p.id === playerId)) return;
+    if (s.players.length >= s.settings.maxPlayers) return;
+    if (s.settings.locked) return;
+    const remote: Player = {
+      ...freshPlayer(name, avatarId, false),
+      id: playerId,
+      ready: false,
+    };
+    set({ players: [...get().players, remote] });
+  },
+
+  setRemoteReady: (playerId, ready) => {
+    if (!get().isHost) return;
+    set({ players: get().players.map((p) => (p.id === playerId && !p.isHost ? { ...p, ready } : p)) });
+  },
+
+  removeRemotePlayer: (playerId) => {
+    const s = get();
+    if (!s.isHost || playerId === s.meId) return;
+    if (!s.players.some((p) => p.id === playerId)) return;
+    set({ players: s.players.filter((p) => p.id !== playerId) });
+  },
+
+  submitRemoteAnswer: ({ playerId, questionId, choice }) => {
+    const s = get();
+    if (!s.isHost || s.status !== "playing" || s.phase !== "question" || s.awaitingStage) return;
+    const q = s.order[s.currentIndex];
+    if (!q || q.id !== questionId) return;
+    const kind = currentStageKind(s);
+    if (kind === "wager" && s.wagers[playerId] === undefined) return;
+    const target = s.players.find((p) => p.id === playerId);
+    if (!target || target.eliminated || target.isBot) return;
+    if (s.submissions.some((x) => x.playerId === playerId)) return;
+    const now = Date.now();
+    const sub: AnswerSubmission = {
+      playerId,
+      questionId: q.id,
+      choice,
+      at: now,
+      responseMs: now - s.questionStartedAt,
+    };
+    set({
+      submissions: [...s.submissions, sub],
+      players: s.players.map((p) => (p.id === playerId ? { ...p, status: "answered" as const } : p)),
+    });
+    maybeAutoReveal();
+  },
+
+  placeRemoteWager: (playerId, pct) => {
+    const s = get();
+    if (!s.isHost || s.phase !== "question" || currentStageKind(s) !== "wager") return;
+    const target = s.players.find((p) => p.id === playerId);
+    if (!target || target.eliminated) return;
+    set({ wagers: { ...s.wagers, [playerId]: pct } });
+  },
+
+  applySnapshot: (snap) => {
+    const s = get();
+    if (s.isHost) return;
+    if (s.code && snap.code !== s.code) return;
+    const newQuestion =
+      snap.currentIndex !== s.currentIndex ||
+      (s.phase === "reveal" && snap.phase === "question");
+    const order = snap.order.map((q) => ({
+      id: q.id,
+      question: q.question,
+      answers: q.answers,
+      correctAnswer: -1 as number,
+      category: q.category,
+      difficulty: q.difficulty as Question["difficulty"],
+    }));
+    const players = snap.players.map(fromPublicPlayer);
+    const meNow = players.find((p) => p.id === s.meId);
+    set({
+      code: snap.code,
+      status: snap.status,
+      settings: snap.settings,
+      hostBankName: snap.bankName,
+      players,
+      order,
+      currentIndex: snap.currentIndex,
+      phase: snap.phase,
+      questionStartedAt: snap.questionStartedAt,
+      questionEndsAt: snap.questionEndsAt,
+      answerOrder: [...snap.answerOrder] as [number, number, number, number],
+      stages: snap.stages,
+      awaitingStage: snap.awaitingStage,
+      wagers: { ...snap.wagers },
+      reveal: snap.reveal ? { correct: snap.reveal.correct, submissions: [...snap.reveal.submissions] } : null,
+      submissions: snap.reveal ? [...snap.reveal.submissions] : [],
+      myChoice: newQuestion ? null : s.myChoice,
+      myLocked: snap.phase === "reveal" ? true : newQuestion ? false : s.myLocked,
+      removedOptions: newQuestion ? [] : s.removedOptions,
+      crowdVotes: newQuestion ? null : s.crowdVotes,
+      myPrizeAtStart: newQuestion ? (meNow?.prize ?? 0) : s.myPrizeAtStart,
+      myLevelAtStart: newQuestion ? (meNow?.level ?? -1) : s.myLevelAtStart,
+      p2pLastHostAt: Date.now(),
+      connectionNote: "متصل بالمضيف",
+    });
+  },
+
+  buildHostSnapshot: () => {
+    const s = get();
+    if (!s.isHost || !s.code) return null;
+    const answerOrder = [...s.answerOrder] as [number, number, number, number];
+    return {
+      v: 1 as const,
+      code: s.code,
+      status: s.status,
+      settings: s.settings,
+      bankName: s.bank?.name ?? null,
+      players: s.players.map(toPublicPlayer),
+      order: s.order.map((q) => ({
+        id: q.id,
+        question: q.question,
+        answers: q.answers,
+        category: typeof q.category === "string" ? q.category : "mixed",
+        difficulty: q.difficulty,
+      })),
+      currentIndex: s.currentIndex,
+      phase: s.phase,
+      questionStartedAt: s.questionStartedAt,
+      questionEndsAt: s.questionEndsAt,
+      answerOrder,
+      stages: s.stages,
+      awaitingStage: s.awaitingStage,
+      wagers: { ...s.wagers },
+      reveal: s.phase === "reveal" && s.reveal ? { correct: s.reveal.correct, submissions: [...s.reveal.submissions] } : null,
+    };
   },
 }));
 

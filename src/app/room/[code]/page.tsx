@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { RoomCode } from "@/components/room/RoomCode";
+import { RoomSync } from "@/components/room/RoomSync";
 import { BankManager } from "@/components/room/BankManager";
 import { useRoom } from "@/lib/game/store";
 import { categoryName, difficultyName } from "@/data/questions";
@@ -70,7 +71,7 @@ export default function LobbyPage() {
                 <Row k="الأسئلة" v={`${s.settings.questionCount}${s.settings.tournament ? " + جولات خاصة" : ""}`} />
                 <Row k="المؤقت" v={`${s.settings.timerSeconds}s`} />
                 <Row k="اللاعبون" v={`${s.players.length} / ${s.settings.maxPlayers}`} />
-                <Row k="البنك" v={s.bank?.name ?? "—"} />
+                <Row k="البنك" v={s.bank?.name ?? s.hostBankName ?? "—"} />
                 {s.connectionNote && <p className="mt-1 text-[12px] text-[var(--muted)]">{s.connectionNote}</p>}
               </CardContent>
             </Card>
@@ -78,6 +79,7 @@ export default function LobbyPage() {
 
           {/* Players */}
           <div className="flex flex-col gap-4">
+            <RoomSync />
             <Card>
               <CardHeader>
                 <CardTitle>اللاعبون ({s.players.length})</CardTitle>
